@@ -156,7 +156,6 @@ net_err_t pktbuf_init(void)
     // 初始化两个存储结构
     mblock_init(&block_list, block_buffer, sizeof(pktblk_t), PKTBUF_BLK_CNT, NLOCKER_THREAD);
     mblock_init(&pktbuf_list, pktbuf_buffer, sizeof(pktbuf_t), PKTBUF_BUF_CNT, NLOCKER_THREAD);
-
     //..........................................
     //pktbuf_buffer[1].total_size = 0;
     dbg_info(DBG_BUF, "init done.");
@@ -315,6 +314,7 @@ pktbuf_t* pktbuf_alloc(int size)
         return (pktbuf_t*)0;
     }
     // 对pktbuf_t进行一些简单的初始化
+    buf->res = 1;
     buf->total_size = 0;
     nlist_init(&buf->blk_list);         // 这里初始化一个空链表，后续生成好的由pktblk组成的链表往这里扔就好
     nlist_node_init(&buf->node);
@@ -343,10 +343,14 @@ pktbuf_t* pktbuf_alloc(int size)
  */
 void pktbuf_free(pktbuf_t* buf)
 {
-    pktblock_free_list(pktbuf_first_blk(buf));
-    mblock_free(&pktbuf_list, buf);
+    nlocker_lock(&locker);
+    if ((--(buf->res)) != 0)
+    {
+        pktblock_free_list(pktbuf_first_blk(buf));
+        mblock_free(&pktbuf_list, buf);
+    }
+    nlocker_unlock(&locker);
 }
-
 
 /**
  * 给逻辑上的包添加一个包头

@@ -53,10 +53,8 @@ net_err_t exmsg_netif_in(netif_t* netif)
         return NET_ERR_MEM;
     }
 
-    // 测试性的放一些数据在里面
-    static int id = 0;
     msg->type = NET_EXMSG_NETIF_IN;
-    msg->id = id++;
+    msg->netif.netif = netif;
 
     // 把刚刚临时存的信息放到消息队列里
     net_err_t err = fixq_send(&msg_queue, msg, -1);
@@ -72,6 +70,23 @@ net_err_t exmsg_netif_in(netif_t* netif)
     return NET_ERR_OK;
 }
 
+static net_err_t do_netif_in(exmsg_t* msg)
+{
+    netif_t* netif = msg->netif.netif;
+
+    pktbuf_t* buf;
+    while (buf = netif_get_in(netif, -1))
+    {
+        dbg_info(DBG_MSG, "recv a packet");
+
+        pktbuf_fill(buf, 0x11, 6);
+        net_err_t err = netif_out(netif, (ipaddr_t*)0, buf);
+
+        //pktbuf_free(buf);
+    }
+    return NET_ERR_OK;
+}
+
 static void work_thread(void* arg)
 {
     plat_printf("exmsg is running...\n");
@@ -79,8 +94,16 @@ static void work_thread(void* arg)
     {
         // 从消息队列中取出数据，如果消息队列中没有数据，那么该线程会卡在这卡着
         exmsg_t * msg = (exmsg_t *)fixq_recv(&msg_queue, 0);
-        // 模拟对取出的数据进行处理
-        plat_printf("recv a msg type: %d, id: %d\n", msg->type, msg->id);
+        dbg_info(DBG_MSG, "recv a msg %p: %d\n", msg, msg->type);
+        switch (msg->type)
+        {
+        case NET_EXMSG_NETIF_IN:
+            do_netif_in(msg);
+            break;
+        
+        default:
+            break;
+        }
         // 处理完了需要把临时用来接收的链表节点释放回链表
         mblock_free(&msg_block, msg);
     }

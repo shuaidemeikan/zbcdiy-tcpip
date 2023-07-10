@@ -20,6 +20,7 @@ typedef struct _pktbuf_t
     nlist_t blk_list;
     nlist_node_t node;
 
+    int res;                    // 引用计数，用来判断当前pktbuf是否可以释放
     // 后三个参数在一起构成了“块指针”，表明当前buf正在操作哪个块
     int pos;                    // 从当前块起始点到当前块指针指向的地方的总大小
     pktblk_t* curr_blk;         // 当前在操作哪一个块
@@ -65,6 +66,11 @@ static inline uint8_t* pktbuf_data(pktbuf_t* buf)
 {
     pktblk_t* first = pktbuf_first_blk(buf);
     return first ? first->data : (uint8_t*)0;
+}
+
+static inline void pktbuf_inc_ref(pktbuf_t* buf)
+{
+    buf->res = buf->res + 1;
 }
 
 net_err_t pktbuf_add_header(pktbuf_t* buf, int size, int cont);

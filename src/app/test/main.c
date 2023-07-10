@@ -147,7 +147,7 @@ void ptkbuf_test(void)
 	pktbuf_set_cont(buf, 60);
 	pktbuf_set_cont(buf, 44);
 	pktbuf_set_cont(buf, 128);
-	pktbuf_set_cont(buf, 135);		// ???
+	pktbuf_set_cont(buf, 135);		
 	pktbuf_free(buf);
 
 	buf = pktbuf_alloc(32);
@@ -231,7 +231,7 @@ int main (void) {
 
 	net_start();
 
-	basic_test();
+	//basic_test();
 
 	dbg_info(DBG_LEVEL_ERROR, "my is test,a1 = %d a2 = %d\n",1,2);
 	while(1)

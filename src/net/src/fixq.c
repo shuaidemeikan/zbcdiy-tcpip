@@ -41,7 +41,7 @@ net_err_t fixq_init(fixq_t* q, void** buf, int size, nlocker_type_t type)
         goto init_failed;
     }
 
-    // 接受的信号量（从队列里出去），由于队列在初始化，内部是空的，里面没有一个东西，所以数量应该是0
+    // 接收的信号量（从队列里出去），由于队列在初始化，内部是空的，里面没有一个东西，所以数量应该是0
     q->recv_sem = sys_sem_create(0);
     if (q->recv_sem == SYS_SEM_INVALID)
     {

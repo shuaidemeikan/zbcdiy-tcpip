@@ -132,14 +132,15 @@ netif_t* netif_open(const char* dev_name, const netif_ops_t* ops, void* ops_data
         return (netif_t*)0;
     }
 
+    netif->ops = ops;
+    netif->ops_data = ops_data;
     err = ops->open(netif, ops_data);
     if (err < 0)
     {
         dbg_ERROR(DBG_NETIF, "netif ops open err");
         goto free_return;
     }
-    netif->ops = ops;
-    netif->ops_data = ops_data;
+    
     netif->state = NETIF_OPENED;
 
     // 意义不明的判断，进行到这里理应不会有任何代码修改type的
@@ -318,7 +319,7 @@ net_err_t netif_put_out (netif_t* netif, pktbuf_t* buf, int tmo)
 
 pktbuf_t* netif_get_out (netif_t* netif, int tmo)
 {
-    pktbuf_t* buf =fixq_recv(&netif->out_q, tmo);
+    pktbuf_t* buf = fixq_recv(&netif->out_q, tmo);
     if (!buf)
     {
         dbg_info(DBG_NETIF, "netif out_q empty");
@@ -344,6 +345,8 @@ net_err_t netif_out(netif_t* netif, ipaddr_t* ipaddr, pktbuf_t* buf)
         dbg_info(DBG_NETIF, "send failed, queue full");
         return err;
     }
+
+    pktbuf_inc_ref(buf);
 
     return netif->ops->xmit(netif);
 }
