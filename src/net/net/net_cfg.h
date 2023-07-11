@@ -8,6 +8,10 @@
 #define DBG_INIT        DBG_LEVEL_INFO
 #define DBG_PLAT        DBG_LEVEL_INFO
 #define DBG_NETIF       DBG_LEVEL_INFO
+#define DBG_ETHER       DBG_LEVEL_INFO
+#define DBG_TOOLS       DBG_LEVEL_INFO
+
+#define NET_ENDIAN_LITTLE   1
 
 #define EXMSG_MSG_CNT   10
 

@@ -70,6 +70,10 @@ net_err_t exmsg_netif_in(netif_t* netif)
     return NET_ERR_OK;
 }
 
+/**
+ * 大多数包的处理函数
+ * @param msg 要被处理的包的类型，包来自哪张网卡，这个线程根据这个去对应的网卡的in_q队列中取数据
+ */
 static net_err_t do_netif_in(exmsg_t* msg)
 {
     netif_t* netif = msg->netif.netif;
@@ -79,14 +83,26 @@ static net_err_t do_netif_in(exmsg_t* msg)
     {
         dbg_info(DBG_MSG, "recv a packet");
 
-        pktbuf_fill(buf, 0x11, 6);
-        net_err_t err = netif_out(netif, (ipaddr_t*)0, buf);
-
-        //pktbuf_free(buf);
+        if (netif->link_layer)
+        {
+            net_err_t err = netif->link_layer->in(netif, buf);
+            if (err < 0)
+            {
+                // 秉持一个原则，当出错时，由这里返回，当不出错时，让最终处理的函数自己返回
+                pktbuf_free(buf);
+                dbg_WARNING(DBG_MSG, "netif in failed, error = %d", err);
+            }
+        }else 
+            // 同样，netif内的link_layer没有的话，就没办法对这个包进行处理，应该直接返回
+            pktbuf_free(buf);
     }
     return NET_ERR_OK;
 }
 
+/**
+ * 作用很多，目前主要做的是：
+ * 当有人调exmsg_netif_in往全局消息队列内送数据的时候，判断一下数据类型然后扔给对应的处理函数，没有数据就一直睡
+ */
 static void work_thread(void* arg)
 {
     plat_printf("exmsg is running...\n");
@@ -109,6 +125,10 @@ static void work_thread(void* arg)
     }
 }
 
+/**
+ * 协议栈exmsg的启动，工作线程在这里被创建
+ * @return err类型的返回值
+ */
 net_err_t exmsg_start(void)
 {
     sys_thread_t thread = sys_thread_create(work_thread, (void*)0);

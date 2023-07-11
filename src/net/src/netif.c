@@ -13,6 +13,8 @@ static nlist_t netif_list;
 // 默认网卡
 static netif_t* netif_default;
 
+static const link_layer_t* link_layers[NETIF_TYPE_SIZE];
+
 #if DBG_DISP_ENABLED(DBG_NETIF)
 void display_netif_list(void)
 {
@@ -80,8 +82,43 @@ net_err_t netif_init(void)
     mblock_init(&netif_mblock, &netif_buffer, sizeof(netif_t), NETIF_DEV_CNT, NLOCKER_NONE);
 
     netif_default = (netif_t*)0;
+    plat_memset((void*)link_layers, 0, sizeof(link_layers));
     dbg_info(DBG_NETIF, "netif init done");
     return NET_ERR_OK;
+}
+
+net_err_t netif_register_layer(int type, const link_layer_t* layer)
+{
+    if ((type <0) || (type >= NETIF_TYPE_SIZE))
+    {
+        dbg_ERROR(DBG_NETIF, "type error");
+        return NET_ERR_PARAM;
+    }
+
+    if (link_layers[type])
+    {
+        dbg_ERROR(DBG_NETIF, "link layer exist");
+        return NET_ERR_EXIST;
+    }
+
+    link_layers[type] = layer;
+    return NET_ERR_OK;
+}
+
+/**
+ * 获得对应类型的数据链路层处理函数
+ * @param type 对应的数据链路层类型
+ * @return 对应数据链路层类型的处理函数
+ */
+static const link_layer_t* netif_get_layer(int type)
+{
+    if ((type < 0) || (type >= NETIF_TYPE_SIZE))
+    {
+        dbg_ERROR(DBG_NETIF, "type error");
+        return (const link_layer_t*)0;
+    }
+
+    return link_layers[type];
 }
 
 /**
@@ -150,6 +187,14 @@ netif_t* netif_open(const char* dev_name, const netif_ops_t* ops, void* ops_data
         goto free_return;
     }
 
+    // 初始化netif_layer_t
+    netif->link_layer = netif_get_layer(netif->type);
+    if((netif->link_layer == (const link_layer_t*)0) && (netif->type != NETIF_TYPE_LOOP))
+    {
+        dbg_ERROR(DBG_NETIF, "no link layer,netif name: %s\n", dev_name);
+        goto free_return;
+    }
+
     // 把当前网卡插入到总网卡链表的最后一个节点，方便操作
     nlist_insert_last(&netif_list, &netif->node);
     display_netif_list();
@@ -210,6 +255,16 @@ net_err_t netif_set_active (netif_t * netif)
         return NET_ERR_STATE;
     }    
 
+    if (netif->link_layer)
+    {
+        net_err_t err = netif->link_layer->open(netif);
+        if (err < 0)
+        {
+            dbg_info(DBG_NETIF, "active error");
+            return err;
+        }
+    }
+
     if (!netif_default && netif->type != NETIF_TYPE_LOOP)
         netif_set_default(netif);
 
@@ -231,6 +286,9 @@ net_err_t netif_set_deactive (netif_t * netif)
         dbg_ERROR(DBG_NETIF, "netif is not actived");
         return NET_ERR_STATE;
     }   
+
+    if (netif->link_layer)
+        netif->link_layer->close(netif);
 
     // 释放两个fixq内的数据
     pktbuf_t* buf;
@@ -277,8 +335,17 @@ void netif_set_default (netif_t* netif)
     netif_default = netif;
 }
 
-// 以下四个函数都是往网卡内部的消息队列写数据，具体用途根据函数名判断
+// 以下四个函数都是往网卡内部的消息队列写数据
 
+/**
+ * 往对应网卡的输入队列里写一个包
+ * 用于pcap接口收到网卡的数据之后立刻将该数据写入网卡的in_q队列
+ * 写入后调用exmsg_netif_in用来通知全局有包进入协议栈了
+ * @param netif 往那张网卡写
+ * @param buf 写的具体内容
+ * @param tmo 等待的时间
+ * @return err类型的返回值
+ */
 net_err_t netif_put_in (netif_t* netif, pktbuf_t* buf, int tmo)
 {
     net_err_t err = fixq_send(&netif->in_q, buf, tmo);
@@ -292,6 +359,14 @@ net_err_t netif_put_in (netif_t* netif, pktbuf_t* buf, int tmo)
     return NET_ERR_OK;
 }
 
+/**
+ * 从对应网卡的输入队列里取一个包出来，如果消息队列里没有包，就会卡在第一条语句这里
+ * 通常来说，别的线程调用上面的函数往这张网卡的输出队列里写一个包
+ * 然后就由对应网卡的xmit线程调用这个函数读出来一个包，最后直接发送，也就是说这个函数通常是发送的倒数第二步
+ * @param netif 从哪张网卡取
+ * @param tmo 取的等待时间，一般都不等待
+ * @return 取出来的包
+ */
 pktbuf_t* netif_get_in (netif_t* netif, int tmo)
 {
     pktbuf_t* buf =fixq_recv(&netif->in_q, tmo);
@@ -305,6 +380,15 @@ pktbuf_t* netif_get_in (netif_t* netif, int tmo)
     return buf;
 }
 
+/**
+ * 往对应网卡的输出队列里写一个包
+ * 别的线程调用这个函数往网卡内写一个包，然后对应网卡的xmit线程调用下面的函数发出去
+ * 也就是说，这个函数通常是发送的倒数第三步
+ * @param netif 往那张网卡写
+ * @param buf 写的具体内容
+ * @param tmo 等待的时间
+ * @return err类型的返回值
+ */
 net_err_t netif_put_out (netif_t* netif, pktbuf_t* buf, int tmo)
 {
     net_err_t err = fixq_send(&netif->out_q, buf, tmo);
@@ -317,6 +401,14 @@ net_err_t netif_put_out (netif_t* netif, pktbuf_t* buf, int tmo)
     return NET_ERR_OK;
 }
 
+/**
+ * 从对应网卡的输出队列里取一个包出来，如果消息队列里没有包，就会卡在第一条语句这里
+ * 通常来说，别的线程调用上面的函数往这张网卡的输出队列里写一个包
+ * 然后就由对应网卡的xmit线程调用这个函数读出来一个包，最后直接发送，也就是说这个函数通常是发送的倒数第二步
+ * @param netif 从哪张网卡取
+ * @param tmo 取的等待时间，一般都不等待
+ * @return 取出来的包
+ */
 pktbuf_t* netif_get_out (netif_t* netif, int tmo)
 {
     pktbuf_t* buf = fixq_recv(&netif->out_q, tmo);

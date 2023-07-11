@@ -7,6 +7,8 @@
 #include "mblock.h"
 #include "pktbuf.h"
 #include "netif.h"
+#include "ether.h"
+#include "tools.h"
 
 pcap_data_t netdev0_data = {.ip = netdev0_phy_ip, .hwaddr = netdev0_hwaddr};
 net_err_t netdev_init()
@@ -216,21 +218,21 @@ void ptkbuf_test(void)
 
 void basic_test(void)
 {
-	nlist_test();
-	mblock_test();
-	ptkbuf_test();
+	//nlist_test();
+	//mblock_test();
+	//ptkbuf_test();
 
 }
 
 int main (void) {
 	//dbg_assert(1 == 2, "test");
-	
+	tools_init();
 	net_init();
 
 	netdev_init();
 
 	net_start();
-
+	
 	//basic_test();
 
 	dbg_info(DBG_LEVEL_ERROR, "my is test,a1 = %d a2 = %d\n",1,2);

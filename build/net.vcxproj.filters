@@ -7,6 +7,9 @@
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\debug.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\ether.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\exmsg.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -37,6 +40,9 @@
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\pktbuf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\tools.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\plat\net_plat.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -49,6 +55,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\ether.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\exmsg.h">
@@ -88,6 +97,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\sys.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\tools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\plat\net_plat.h">

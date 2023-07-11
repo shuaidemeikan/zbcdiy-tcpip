@@ -15,6 +15,7 @@ net_err_t net_init(void)
     exmsg_init();
     net_err_t err = pktbuf_init();
     loop_init();
+    ether_init();
     return NET_ERR_OK;
 }
 net_err_t net_start(void)
