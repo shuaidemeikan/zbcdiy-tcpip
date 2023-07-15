@@ -6,6 +6,8 @@
 #include "debug.h"
 #include "netif.h"
 #include "loop.h"
+#include "timer.h"
+#include "ether.h"
 
 net_err_t net_init(void)
 {
@@ -14,6 +16,7 @@ net_err_t net_init(void)
     net_plat_init();
     exmsg_init();
     net_err_t err = pktbuf_init();
+    net_timer_init();
     loop_init();
     ether_init();
     return NET_ERR_OK;

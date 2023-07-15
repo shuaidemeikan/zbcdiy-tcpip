@@ -3,6 +3,8 @@
 #include "debug.h"
 #include "sys.h"
 #include "exmsg.h"
+#include "ether.h"
+#include "protocol.h"
 
 // 存储网卡结构体实际的内存
 static netif_t netif_buffer[NETIF_DEV_CNT];
@@ -431,14 +433,28 @@ pktbuf_t* netif_get_out (netif_t* netif, int tmo)
  */
 net_err_t netif_out(netif_t* netif, ipaddr_t* ipaddr, pktbuf_t* buf)
 {
-    net_err_t err = netif_put_out(netif, buf, -1);
-    if (err < 0)
+    // 协议栈本质上只支持以太网和环回网卡，所以可以用netif中是否初始化过link_layer来判断是不是以太网
+    // 如果是以太网，调用一下以太网的处理方式来发送这个包
+    if (netif->link_layer)
     {
-        dbg_info(DBG_NETIF, "send failed, queue full");
-        return err;
-    }
+        net_err_t err = ether_raw_out(netif, NET_PROTOCOL_ARP, ether_broadcast_addr(), buf);
+        if (err < 0)
+        {
+            dbg_WARNING(DBG_NETIF, "netif link out err");
+            return err;
+        }
+        return NET_ERR_OK;
+    }else
+    {
+        net_err_t err = netif_put_out(netif, buf, -1);
+        if (err < 0)
+        {
+            dbg_info(DBG_NETIF, "send failed, queue full");
+            return err;
+        }
 
-    pktbuf_inc_ref(buf);
+        pktbuf_inc_ref(buf);
 
-    return netif->ops->xmit(netif);
+        return netif->ops->xmit(netif);
+    }  
 }
