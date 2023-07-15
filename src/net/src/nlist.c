@@ -64,12 +64,13 @@ void nlist_insert_after(nlist_t* list, nlist_node_t* pre, nlist_node_t* node)
     }
     node->next = pre->next;
     node->pre = pre;
+
     // 判断被插入节点后是否有节点，同时如果后面没节点了，那么就相当于是尾插入
     if (pre->next)
         pre->next->pre = node;
     else
         list->last = node;
-    
+    pre->next = node;
     (list->count)++;
 }
 
