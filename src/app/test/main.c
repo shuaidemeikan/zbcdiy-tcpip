@@ -250,7 +250,10 @@ void timer_test(void)
 	net_timer_add(&t2, "t2", timer2_proc, (void*)0, 1000, NET_TIMER_RELOAD);
 	net_timer_add(&t3, "t3", timer3_proc, (void*)0, 4000, NET_TIMER_RELOAD);
 
-	net_timer_remove(&t1);
+	net_timer_remove(&t0);
+
+	net_timer_check_tmo(800);
+	net_timer_check_tmo(1200);
 }
 
 void basic_test(void)

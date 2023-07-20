@@ -114,3 +114,49 @@ void net_timer_remove (net_timer_t* timer)
     }
     display_timer_list();
 }
+
+net_err_t net_timer_check_tmo (int diff_ms)
+{
+    static nlist_t timeout_timer;
+    nlist_init(&timeout_timer);
+
+    nlist_node_t* node = nlist_first(&timer_list);
+    while (node)
+    {
+        net_timer_t* timer = nlist_entry(node, net_timer_t, node);
+        if (timer->curr >= diff_ms)
+        {
+            timer->curr -= diff_ms;
+            break;
+        }
+        else
+        {
+            timer->curr = 0;
+            node = nlist_node_next(node);         // 更新node节点
+            diff_ms -= timer->curr;                             // 更新diff_ms时间
+            nlist_remove(&timer_list, &timer->node);             // 将该节点从定时器列表移除
+            nlist_insert_last(&timeout_timer, &timer->node);     // 将该节点插入到超市列表里
+            
+        }
+    }
+
+    // 扫描完了，此时所有超时的定时器都被扫描出来了
+    node = nlist_first(&timeout_timer);
+    while (node)
+    {
+        net_timer_t* timer = nlist_entry(node, net_timer_t, node);
+        timer->proc(timer, timer->arg);
+        
+        node = nlist_node_next(node);
+        
+        if (timer->flags & NET_TIMER_RELOAD)
+        {
+            timer->curr = timer->reload;
+            insert_timer(timer);
+        }
+        
+    }
+
+    display_timer_list();
+    return NET_ERR_OK;
+}
