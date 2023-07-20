@@ -10,6 +10,7 @@
 #include "ether.h"
 #include "tools.h"
 #include "timer.h"
+#include "arp.h"
 
 pcap_data_t netdev0_data = {.ip = netdev0_phy_ip, .hwaddr = netdev0_hwaddr};
 net_err_t netdev_init()
