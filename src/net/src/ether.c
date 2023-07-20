@@ -1,4 +1,4 @@
-#include "ether.h"
+﻿#include "ether.h"
 #include "debug.h"
 #include "netif.h"
 #include "tools.h"
@@ -93,6 +93,10 @@ net_err_t ether_in (struct _netif_t* netif, pktbuf_t* buf)
     
 net_err_t ether_out (struct _netif_t* netif, ipaddr_t* dest, pktbuf_t* buf)
 {
+    if (ipaddr_is_equal(&netif->ipaddr, dest))
+    {
+        return ether_raw_out(netif, NET_PROTOCOL_IPV4, (const uint8_t*)netif->hwadder.addr, buf);
+    }
     return NET_ERR_OK;
 }
 

@@ -437,7 +437,8 @@ net_err_t netif_out(netif_t* netif, ipaddr_t* ipaddr, pktbuf_t* buf)
     // 如果是以太网，调用一下以太网的处理方式来发送这个包
     if (netif->link_layer)
     {
-        net_err_t err = ether_raw_out(netif, NET_PROTOCOL_ARP, ether_broadcast_addr(), buf);
+        //net_err_t err = ether_raw_out(netif, NET_PROTOCOL_ARP, ether_broadcast_addr(), buf);
+        net_err_t err = netif->link_layer->out(netif, ipaddr, buf);
         if (err < 0)
         {
             dbg_WARNING(DBG_NETIF, "netif link out err");

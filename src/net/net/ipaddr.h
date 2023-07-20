@@ -25,5 +25,6 @@ void ipaddr_set_any(ipaddr_t* ip);
 net_err_t ipaddr_from_str (ipaddr_t* dest, char* str);
 void ipaddr_copy(ipaddr_t* dest, ipaddr_t* src);
 ipaddr_t* ipaddr_get_any(void);
+int ipaddr_is_equal (ipaddr_t* ipaddr1, ipaddr_t* ipaddr2);
 
 #endif

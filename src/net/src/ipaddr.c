@@ -66,3 +66,8 @@ ipaddr_t* ipaddr_get_any(void)
     static ipaddr_t ipaddr_any = {.q_addr = 0, .type = IPADDR_V4};
     return &ipaddr_any;
 }
+
+int ipaddr_is_equal (ipaddr_t* ipaddr1, ipaddr_t* ipaddr2)
+{
+    return ipaddr1->q_addr == ipaddr2->q_addr;
+}

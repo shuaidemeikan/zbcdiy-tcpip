@@ -3,6 +3,8 @@
 #include "debug.h"
 #include "fixq.h"
 #include "mblock.h"
+#include "sys.h"
+#include "timer.h"
 
 // 用于保存消息队列具体内容的内存空间
 static void* msg_tbl[EXMSG_MSG_CNT];
@@ -106,22 +108,33 @@ static net_err_t do_netif_in(exmsg_t* msg)
 static void work_thread(void* arg)
 {
     plat_printf("exmsg is running...\n");
+    net_time_t time;
+    sys_time_curr(&time);
+
     while(1)
     {
         // 从消息队列中取出数据，如果消息队列中没有数据，那么该线程会卡在这卡着
-        exmsg_t * msg = (exmsg_t *)fixq_recv(&msg_queue, 0);
-        dbg_info(DBG_MSG, "recv a msg %p: %d\n", msg, msg->type);
-        switch (msg->type)
+        int first_tmo = net_timer_first_tmo();
+        exmsg_t * msg = (exmsg_t *)fixq_recv(&msg_queue, first_tmo);
+        if (msg)
         {
-        case NET_EXMSG_NETIF_IN:
-            do_netif_in(msg);
-            break;
-        
-        default:
-            break;
+            dbg_info(DBG_MSG, "recv a msg %p: %d\n", msg, msg->type);
+            switch (msg->type)
+            {
+            case NET_EXMSG_NETIF_IN:
+                do_netif_in(msg);
+                break;
+            
+            default:
+                break;
+            }
+            // 处理完了需要把临时用来接收的链表节点释放回链表
+            mblock_free(&msg_block, msg);
         }
-        // 处理完了需要把临时用来接收的链表节点释放回链表
-        mblock_free(&msg_block, msg);
+        
+        int diff_ms = sys_time_goes(&time);
+        net_timer_check_tmo(diff_ms);
+        //net_timer_check_tmo(1000);
     }
 }
 

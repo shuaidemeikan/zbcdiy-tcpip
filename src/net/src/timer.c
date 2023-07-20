@@ -1,4 +1,4 @@
-#include "timer.h"
+﻿#include "timer.h"
 #include "debug.h"
 #include "sys_plat.h"
 
@@ -73,6 +73,16 @@ static void insert_timer(net_timer_t* timer)
     nlist_insert_last(&timer_list, &timer->node);
 }
 
+/**
+ * 往定时器列表里添加一个定时器
+ * @param timer 添加的定时器
+ * @param name 定时器名
+ * @param proc 定时器执行的函数
+ * @param arg 定时器执行的函数需要的参数
+ * @param ms 定时时长
+ * @param flags 标志寄存器，用来控制定时器是否重载
+ * @return err类型的返回值
+ */
 net_err_t net_timer_add (net_timer_t* timer, const char* name ,timer_proc_t proc, void* arg, int ms, int flags)
 {
     dbg_info(DBG_TIMER, "insert timer: %s", name);
@@ -117,6 +127,9 @@ void net_timer_remove (net_timer_t* timer)
 
 net_err_t net_timer_check_tmo (int diff_ms)
 {
+    plat_printf("-------start check timer---------\n");
+    plat_printf("diff_ms = %d\n", diff_ms);
+    display_timer_list();
     static nlist_t timeout_timer;
     nlist_init(&timeout_timer);
 
@@ -124,23 +137,23 @@ net_err_t net_timer_check_tmo (int diff_ms)
     while (node)
     {
         net_timer_t* timer = nlist_entry(node, net_timer_t, node);
-        if (timer->curr >= diff_ms)
+        if (timer->curr > diff_ms)
         {
             timer->curr -= diff_ms;
             break;
         }
         else
         {
-            timer->curr = 0;
             node = nlist_node_next(node);         // 更新node节点
             diff_ms -= timer->curr;                             // 更新diff_ms时间
+            //timer->curr = 0;
             nlist_remove(&timer_list, &timer->node);             // 将该节点从定时器列表移除
             nlist_insert_last(&timeout_timer, &timer->node);     // 将该节点插入到超市列表里
             
         }
     }
 
-    // 扫描完了，此时所有超时的定时器都被扫描出来了
+    // 扫描完了，此时所有超时的定时器都被扫描出来了，遍历一下超时列表
     node = nlist_first(&timeout_timer);
     while (node)
     {
@@ -148,7 +161,7 @@ net_err_t net_timer_check_tmo (int diff_ms)
         timer->proc(timer, timer->arg);
         
         node = nlist_node_next(node);
-        
+
         if (timer->flags & NET_TIMER_RELOAD)
         {
             timer->curr = timer->reload;
@@ -158,5 +171,17 @@ net_err_t net_timer_check_tmo (int diff_ms)
     }
 
     display_timer_list();
+    plat_printf("-------end check timer---------\n");
     return NET_ERR_OK;
+}
+
+int net_timer_first_tmo (void)
+{
+    nlist_node_t* node = nlist_first(&timer_list);
+    if (node)
+    {
+        net_timer_t* timer = nlist_entry(node, net_timer_t, node);
+        return timer->curr;
+    }
+    return 0;
 }
