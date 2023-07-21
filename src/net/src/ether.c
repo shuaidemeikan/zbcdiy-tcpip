@@ -33,15 +33,16 @@ static void display_ether_pkt(char* title, ether_pkt_t* pkt, int total_size)
 }
 
 #else
-static void display_ether_pkt(char* title, ether_pkt_t* pkt, int total_size)
-{
-    return;
-}
+// static void display_ether_pkt(char* title, ether_pkt_t* pkt, int total_size)
+// {
+//     return;
+// }
+#define display_ether_pkt(title, pkt, total_size)
 #endif 
 
 net_err_t ether_open (struct _netif_t* netif)
 {
-    return NET_ERR_OK;
+    return arp_make_gratuitous(netif);
 }
 
 void ether_close (struct _netif_t* netif)
@@ -88,7 +89,26 @@ net_err_t ether_in (struct _netif_t* netif, pktbuf_t* buf)
     }
 
     display_ether_pkt("ether in", pkt, buf->total_size);
-    pktbuf_free(buf);
+    switch (x_ntohl(pkt->hdr.protocol))
+    {
+        case NET_PROTOCOL_ARP:
+        {
+            err = pktbuf_remove_header(buf, sizeof(ether_hdr_t));
+            if (err < 0)
+            {
+                dbg_ERROR(DBG_ETHER, "remove header failed.");
+                return NET_ERR_SIZE;
+            }
+
+            return arp_in(netif, buf);
+        }
+
+        default:
+        {
+            dbg_WARNING(DBG_ETHER, "unknown packet");
+            return NET_ERR_NOT_SUPPORT;
+        }
+    }
     return NET_ERR_OK;
 }
     

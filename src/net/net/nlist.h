@@ -85,7 +85,10 @@ static inline nlist_node_t* nlist_last(nlist_t* list)
 
 static inline nlist_node_t* nlist_remove_first(nlist_t* list)
 {
-    return nlist_remove(list, list->first);
+    nlist_node_t* first = nlist_first(list);
+    if (first)
+        nlist_remove(list, list->first);
+    return first;
 }
 
 static inline nlist_node_t* nlist_remove_last(nlist_t* list)

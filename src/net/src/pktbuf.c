@@ -585,7 +585,7 @@ net_err_t pktbuf_join (pktbuf_t * dest, pktbuf_t * src)
 }
 
 /**
- * 合并一个包前size个字节
+ * 合并一个包前size个字节，确保数据的连续性，在对数据包进行读的时候要先调用一下这个函数
  * @param buf 前size字节需要被合并的包
  * @param size 需要合并的字节数
  * @return err类型的返回值

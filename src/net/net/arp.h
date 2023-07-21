@@ -36,14 +36,18 @@ typedef struct _arp_entry_t
         NET_ARP_RESOLVED,               // 该表项已经被回应且正确的存储
     }state;
 
-    nlist_node_t* node;
+    int tmo;
+    int retry;
+
+    nlist_node_t node;
     nlist_t buf_list;
-    nlist_t* netif;
+    netif_t* netif;
 
 }arp_entry_t;
 
 net_err_t arp_init (void);
 net_err_t arp_make_rquest(netif_t* netif, const ipaddr_t* dest);
-
+net_err_t arp_make_gratuitous(netif_t* netif);
+net_err_t arp_in (netif_t* netif, pktbuf_t* buf);
 
 #endif
