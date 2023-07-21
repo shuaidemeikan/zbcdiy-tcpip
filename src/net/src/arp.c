@@ -87,12 +87,17 @@ static void cache_clear_all(arp_entry_t* entry)
     }
 }
 
+/**
+ * 把一个arp表项中的buf全部发送出去
+ * @param 待发送的arp表项
+ * @return net_err错误类型
+ */
 static net_err_t cache_send_all(arp_entry_t* entry)
 {
     dbg_info(DBG_ARP, "send all packet");
 
     nlist_node_t* first;
-    // 从entry内的buflist这个链表的最后一个一点一点的移除
+    // 从entry内的buflist这个链表的最后一个一点一点的发送
     while ((first = nlist_remove_first(&entry->buf_list)))
     {
         pktbuf_t* buf = nlist_entry(first, pktbuf_t, node);
@@ -161,6 +166,11 @@ static void cache_free(arp_entry_t* entry)
     mblock_free(&cache_mblock, entry);
 }
 
+/**
+ * 在arp表中查找一个arp表项
+ * @param ip arp表项的ip
+ * @return 找到的arp表项
+ */
 static arp_entry_t* cache_find (uint8_t* ip)
 {
     nlist_node_t* node;
@@ -188,23 +198,35 @@ static void cache_entry_set (arp_entry_t* entry, const uint8_t* hwaddr, uint8_t*
     entry->retry = 0;
 }
 
+/**
+ * 在arp表中插入一个arp表项
+ * @param netif 网卡
+ * @param ip 表项中的ip
+ * @param hwaddr 表项中的mac
+ * @param force 插入时如果arp待分配表中没有空位了，是否删除最后一个
+ * @return net_err错误类型
+ */
 static net_err_t cache_insert (netif_t* netif, uint8_t* ip, uint8_t* hwaddr, int force)
 {
     if (*(uint32_t*)ip == 0)
         return NET_ERR_NOT_SUPPORT;
 
+    // 先看arp表中有没有
     arp_entry_t* entry = cache_find(ip);
     if (!entry)
     {
+        // 如果没有，就重新分配一个
         entry = cache_alloc(force, 0);
         if (!entry)
             return NET_ERR_NONE;
         
+        // 分配完之后设置表项的内容，再把它丢到arp表的头部
         cache_entry_set(entry, hwaddr, ip, netif, NET_ARP_RESOLVED);
         nlist_insert_first(&cache_list, &entry->node);
     }
     else
     {
+        // 走到这说明arp表中已存在该表项，更新一下值，然后如果不是头部就把它丢到头部
         cache_entry_set(entry, hwaddr, ip, netif, NET_ARP_RESOLVED);
         if (nlist_first(&cache_list) != &entry->node)
         {
@@ -212,6 +234,7 @@ static net_err_t cache_insert (netif_t* netif, uint8_t* ip, uint8_t* hwaddr, int
             nlist_insert_first(&cache_list, &entry->node);
         }
 
+        // 还要记得把之前表项中缓存的数据发出去
         net_err_t err = cache_send_all(entry);
         if (err < 0)
         {
