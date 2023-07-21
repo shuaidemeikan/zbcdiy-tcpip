@@ -71,3 +71,13 @@ int ipaddr_is_equal (ipaddr_t* ipaddr1, ipaddr_t* ipaddr2)
 {
     return ipaddr1->q_addr == ipaddr2->q_addr;
 }
+
+/**
+ * 将一个ipaddr结构内的数据拷贝到一个单纯的地址处
+ * @param ipaddr 被拷贝的结构
+ * @param target 复制到的目标地址
+ */
+void ipaddr_to_buf(const ipaddr_t* ipaddr, uint8_t* target)
+{
+    *(uint32_t*)target = ipaddr->q_addr;
+}

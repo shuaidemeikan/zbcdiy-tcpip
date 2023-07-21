@@ -5,6 +5,25 @@
 #include "ether.h"
 #include "pktbuf.h"
 
+#define ARP_HW_ETHER    1
+#define ARP_REQUEST     1
+#define ARP_REPLAY      2
+
+#pragma pack(1)
+typedef struct _arp_pkt_t
+{
+    uint16_t htype;
+    uint16_t ptype;
+    uint8_t hwlen;
+    uint8_t plen;
+    uint16_t opcode;
+    uint8_t sender_hwaddr[ETHER_HWA_SIZE];
+    uint8_t sender_paddr[IPV4_ADDR_SIZE];
+    uint8_t target_hwaddr[ETHER_HWA_SIZE];
+    uint8_t target_paddr[IPV4_ADDR_SIZE];
+}arp_pkt_t;
+#pragma pack(1)
+
 typedef struct _arp_entry_t
 {
     uint8_t paddr[IPV4_ADDR_SIZE];
@@ -24,5 +43,7 @@ typedef struct _arp_entry_t
 }arp_entry_t;
 
 net_err_t arp_init (void);
+net_err_t arp_make_rquest(netif_t* netif, const ipaddr_t* dest);
+
 
 #endif

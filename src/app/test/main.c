@@ -33,7 +33,7 @@ net_err_t netdev_init()
 	pktbuf_t* buf = pktbuf_alloc(32);
 	pktbuf_fill(buf, 0x53, 32);
 	ipaddr_t dest;
-	ipaddr_from_str(&dest, netdev0_ip);
+	ipaddr_from_str(&dest, friend0_ip);
 	netif_out(netif, &dest, buf);
 	return NET_ERR_OK;
 }
