@@ -47,7 +47,7 @@ net_err_t ether_open (struct _netif_t* netif)
 
 void ether_close (struct _netif_t* netif)
 {
-
+    arp_clear(netif);
 }
 /**
  * 简单通过大小判断一下读进来的以太网数据帧是否合法
@@ -89,7 +89,7 @@ net_err_t ether_in (struct _netif_t* netif, pktbuf_t* buf)
     }
 
     display_ether_pkt("ether in", pkt, buf->total_size);
-    switch (x_ntohl(pkt->hdr.protocol))
+    switch (x_ntohs(pkt->hdr.protocol))
     {
         case NET_PROTOCOL_ARP:
         {
@@ -119,7 +119,8 @@ net_err_t ether_out (struct _netif_t* netif, ipaddr_t* dest, pktbuf_t* buf)
         return ether_raw_out(netif, NET_PROTOCOL_IPV4, (const uint8_t*)netif->hwadder.addr, buf);
     }
 
-    arp_make_rquest(netif, dest);
+    arp_resolve(netif, dest, buf);
+    //arp_make_rquest(netif, dest);
     return NET_ERR_OK;
 }
 

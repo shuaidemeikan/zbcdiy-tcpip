@@ -5,10 +5,12 @@
 #include "tools.h"
 #include "protocol.h"
 #include "sys.h"
+#include "timer.h"
 
 static arp_entry_t cache_tbl[ARP_CACHE_SIZE];       // arp可使用的系统中所有的内存
 static mblock_t cache_mblock;                       // 用来分配上面的数据
 static nlist_t cache_list;                           // arp链表
+static net_timer_t cache_timer;
 
 #if DBG_DISP_ENABLED(DBG_ETHER)
 
@@ -188,6 +190,83 @@ static arp_entry_t* cache_find (uint8_t* ip)
     return (arp_entry_t*)0;
 }
 
+/**
+ * 定时的去把arp表项超时，第一次超时后会将状态修改为watting
+ * 随后每次扫到watting的时候，就将retry--，当retry-到0的时候，就要将这个包释放
+ * 目前定义的retry是3，每1s扫一次，也就是说当一个包超时后，会每隔1秒钟发一次arp请求
+ * 一共发三次，如果三次都没收到并处理对应的arp回应，那么就代表了该表项需要被free了
+ * @param timer 被调用的定时器
+ * @param arg 定时器要去的参数而已，其实没用到
+ */
+static void arp_cache_tmo (net_timer_t * timer, void * arg)
+{
+    int change_cnt = 0;     // 用来计数多少个包状态被改变了
+    nlist_node_t* curr;
+    nlist_node_t* next;
+
+    for (curr = cache_list.first; curr; curr = next)
+    {
+        next = nlist_node_next(curr);
+
+        arp_entry_t* entry = nlist_entry(curr, arp_entry_t, node);
+        ipaddr_t ipaddr;
+        ipaddr_from_buf(&ipaddr, entry->paddr);
+        if (--entry <= 0)
+        {
+            change_cnt++;
+            switch (entry->state)
+            {
+            case NET_ARP_RESOLVED:
+            {
+                dbg_info(DBG_ARP, "state to pending:");
+                display_arp_entry(entry);
+    
+                entry->state = NET_ARP_WATTING;
+                entry->tmo = ARP_ENTRY_PENDING_TMO;
+                entry->retry = ARP_ENTRY_RETRY_CNT;
+                arp_make_rquest(entry->netif, &ipaddr);
+                break;
+            }
+            case NET_ARP_WATTING:
+            {
+                if (--entry->retry == 0)
+                {
+                    // retry为0时arp表项都还没更新，直接free
+                    dbg_info(DBG_ARP, "pending tmo, free it");
+                    display_arp_entry(entry);
+                    cache_free(entry);
+                }
+                else
+                {
+                    // retry还没为0，打个信息再发一次arp的请求包
+                    dbg_info(DBG_ARP, "pending tmo, send request.");
+                    display_arp_entry(entry);
+
+                    entry->tmo = ARP_ENTRY_PENDING_TMO;
+                    arp_make_rquest(entry->netif, &ipaddr);
+                }
+                break;
+            }
+                
+            // 按理说除了resoled和watting以外还应该有一个free状态，但是实际上free状态只会在arp表项还没链到链表上时出现
+            // 我们这里遍历的是arp链表，所以是不会遍历到free状态的，即使遍历到free状态，也依然是异常的
+            default:
+            {
+                dbg_ERROR(DBG_ARP, "unknown arp state");
+                display_arp_entry(entry);
+                break;
+            }
+            }
+        }
+    }
+
+    if (change_cnt)
+    {
+        dbg_info(DBG_ARP, "%d arp entry changed.", change_cnt);
+        display_arp_tbl();
+    }
+}
+
 static void cache_entry_set (arp_entry_t* entry, const uint8_t* hwaddr, uint8_t* ip, netif_t* netif, int status)
 {
     plat_memcpy(entry->hwaddr, hwaddr, ETHER_HWA_SIZE);
@@ -254,6 +333,14 @@ static net_err_t cache_init(void)
     net_err_t err = mblock_init(&cache_mblock, &cache_tbl, sizeof(arp_entry_t), ARP_CACHE_SIZE, NLOCKER_NONE);
     if (err < 0)
     {
+        dbg_ERROR(DBG_ARP, "arp cache init failed.");
+        return err;
+    }
+
+    err =net_timer_add(&cache_timer, "arp timer", arp_cache_tmo, (void*)0, ARP_TIMER_TMO * 1000, NET_TIMER_RELOAD);
+    if (err < 0)
+    {
+        dbg_ERROR(DBG_ARP, "create timer failed: %d", err);
         return err;
     }
 
@@ -279,16 +366,6 @@ net_err_t arp_init (void)
  */
 net_err_t arp_make_rquest(netif_t* netif, const ipaddr_t* dest)
 {
-    uint8_t* ip = (uint8_t*)dest->a_addr;
-    
-    ip[0] = 0x1;
-    cache_insert(netif, ip ,netif->hwadder.addr, 1);
-    ip[0] = 0x2;
-    cache_insert(netif, ip ,netif->hwadder.addr, 1);
-    ip[0] = 0x3;
-    cache_insert(netif, ip ,netif->hwadder.addr, 1);
-    cache_insert(netif, ip ,netif->hwadder.addr, 1);
-
     pktbuf_t* buf = pktbuf_alloc(sizeof(arp_pkt_t));
     if(!buf)
     {
@@ -363,7 +440,7 @@ static net_err_t is_pkt_ok(arp_pkt_t* arp_packet, uint16_t size, netif_t* netif)
         dbg_WARNING(DBG_ARP, "packet size error");
     }
 
-    if (x_ntohs(arp_packet->htype != ARP_HW_ETHER)
+    if ((x_ntohs(arp_packet->htype) != ARP_HW_ETHER)
     || (arp_packet->hwlen != ETHER_HWA_SIZE)
     || (x_htons(arp_packet->ptype) != NET_PROTOCOL_IPV4)
     || (arp_packet->plen != IPV4_ADDR_SIZE))
@@ -380,6 +457,69 @@ static net_err_t is_pkt_ok(arp_pkt_t* arp_packet, uint16_t size, netif_t* netif)
     }
     
     return NET_ERR_OK;
+}
+
+/**
+ * 当数据链路层需要发送一个ip包时，就会调用该函数，这个函数大体思路如下:
+ * 首先先看arp表里有没有，如果有，并且表项状态是正确的，就直接调用底层发送函数直接把包发出去
+ * 如果表项芝士存在，但是不存在mac地址，那就参照下面的注释
+ * 如果表项不存在，那么申请一个，其他的思路和上面一样
+ * @param netif 数据从哪个网卡发出去
+ * @param ipaddr 发送到哪个ip地址去
+ * @param buf 数据链路层待发送的ip数据包
+ * @return net_err错误类型
+ */
+net_err_t arp_resolve (netif_t* netif, const ipaddr_t* ipaddr, pktbuf_t* buf)
+{
+    // 需要转一下ip的结构
+    uint8_t ip_buf[IPV4_ADDR_SIZE];
+    ipaddr_to_buf(ipaddr, ip_buf);
+
+    // 先判断一下目标地址是否是本网络的
+    if (ipaddr_is_direct_broadcast(&netif->ipaddr, &netif->netmask, ipaddr) || ipaddr_is_local_broadcast(ipaddr))
+        ether_raw_out(netif, NET_PROTOCOL_IPV4, ether_broadcast_addr(), buf);
+
+    // 查表看看能不能查到
+    arp_entry_t* entry = cache_find(ip_buf);
+    if (entry)
+    {
+        dbg_info(DBG_ARP, "found an arp entry.");
+        // 如果查到了，得看看这个表项内有没有mac地址，如果有，直接对着这个mac发就完事了
+        if (entry->state == NET_ARP_RESOLVED)
+            return ether_raw_out(netif, NET_PROTOCOL_IPV4, entry->hwaddr, buf);
+        
+        // 如果存在表项但是不存在mac，就说明这个表项的arp请求刚刚发出去了，但是还没收到回复
+        // 那么我们直接把数据包丢到这个表项的buf里就ok了，回头收到回复的时候会把buf全发出去的
+        // 但是需要保证一个arp表项上链的buf不能太多，否则整个协议栈的buf可能会进入一个黑洞表项
+        if (nlist_count(&entry->buf_list) <= ARP_MAX_PKT_WAIT)
+        {
+            dbg_info(DBG_ARP, "insert buf to arp entry");
+            nlist_insert_last(&entry->buf_list, &buf->node);
+            return NET_ERR_OK;
+        }
+        else
+        {
+            dbg_info(DBG_ARP, "too many bufs on this arp entry, entry is: %d.%d.%d.%d", ip_buf[0], ip_buf[1], ip_buf[2], ip_buf[3]);
+            return NET_ERR_FULL;
+        }
+    }
+    // 走到这说明没查到
+    dbg_info(DBG_ARP, "not find arp entry, The ip you are trying to find is: %d.%d.%d.%d, The protocol stack will send an arp requset", ip_buf[0], ip_buf[1], ip_buf[2], ip_buf[3]);
+    
+    entry = cache_alloc(1, 0);
+    if (entry == (arp_entry_t*)0)
+    {
+        dbg_ERROR(DBG_ARP, "alloc arp failed.");
+        return NET_ERR_NONE;
+    }
+
+    // 走到这说明拿到了一个新的包
+    cache_entry_set(entry, emptry_hwaddr, ip_buf, netif, NET_ARP_WATTING);
+    nlist_insert_first(&cache_list, &entry->node);
+    nlist_insert_last(&entry->buf_list, &buf->node);
+
+    display_arp_entry(entry);
+    return arp_make_rquest(netif, ipaddr);
 }
 
 /**
@@ -402,13 +542,43 @@ net_err_t arp_in (netif_t* netif, pktbuf_t* buf)
     
     arp_pkt_display(arp_packet);
 
-    if (x_ntohs(arp_packet->opcode == ARP_REQUEST))
+    // 如果收到一个arp包，不管是不是发给自己的，不管是回应还是请求，都把对面的mac地址记录下来
+    ipaddr_t target_ip;
+    ipaddr_from_buf(&target_ip, arp_packet->target_paddr);
+
+    if (ipaddr_is_equal(&target_ip, &netif->ipaddr))
     {
-        dbg_info(DBG_ARP, "arp request, send reply");
-        return arp_make_reply(netif, buf);
+        cache_insert(netif, arp_packet->sender_paddr, arp_packet->sender_hwaddr, 1);
+        if (x_ntohs(arp_packet->opcode == ARP_REQUEST))
+        {
+            dbg_info(DBG_ARP, "arp request, send reply");
+            return arp_make_reply(netif, buf);
+        }
+    }
+    else
+    {
+        dbg_info(DBG_ARP, "recieve an arp, but it's not for me");
+        // 不是发给自己的，就没有必要在arp待使用表项不足的情况下强行插入了
+        cache_insert(netif, arp_packet->sender_paddr, arp_packet->sender_hwaddr, 0);
     }
 
     pktbuf_free(buf);
     return NET_ERR_OK;
 }
 
+void arp_clear (netif_t* netif)
+{
+    nlist_node_t* curr;
+    nlist_node_t* next;
+
+    for (curr = nlist_first(&cache_list); curr; curr = next)
+    {
+        next = nlist_node_next(curr);
+        arp_entry_t* entry = nlist_entry(curr, arp_entry_t, node);
+
+        if (entry->netif == netif)
+        {
+            nlist_remove(&cache_list, curr);
+        }
+    }
+}

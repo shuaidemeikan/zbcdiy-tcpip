@@ -19,6 +19,7 @@
 // 系统硬件配置
 // 不同网卡配置，共2块网卡
 #if 1
+static const char emptry_hwaddr[] = {0, 0, 0, 0, 0, 0};
 static char netdev0_ip[] = "192.168.74.2";
 static char netdev0_gw[] = "192.168.74.1";
 static char friend0_ip[] = "192.168.74.3";

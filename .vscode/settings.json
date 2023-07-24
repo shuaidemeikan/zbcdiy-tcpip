@@ -63,7 +63,8 @@
         "loop.h": "c",
         "mblock.h": "c",
         "netif_pcap.h": "c",
-        "arp.h": "c"
+        "arp.h": "c",
+        "protocol.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled",
     "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools"

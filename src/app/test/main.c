@@ -263,7 +263,7 @@ void basic_test(void)
 	//mblock_test();
 	//ptkbuf_test();
 
-	timer_test();
+	//timer_test();
 }
 
 int main (void) {

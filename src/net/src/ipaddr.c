@@ -81,3 +81,25 @@ void ipaddr_to_buf(const ipaddr_t* ipaddr, uint8_t* target)
 {
     *(uint32_t*)target = ipaddr->q_addr;
 }
+
+void ipaddr_from_buf (ipaddr_t* dest, uint8_t* ip_buf)
+{
+    dest->type = IPADDR_V4;
+    dest->q_addr = *(uint32_t*)ip_buf;
+}
+
+int ipaddr_is_local_broadcast (const ipaddr_t* ipaddr)
+{
+    return ipaddr->q_addr == 0xFFFFFFFF;
+}
+
+int ipaddr_is_direct_broadcast (const ipaddr_t* ipaddr, const ipaddr_t* netmask, const ipaddr_t* targetip)
+{
+    uint32_t netifip = ipaddr->q_addr;
+    uint32_t netmaskip = netmask->q_addr;
+    uint32_t target = targetip->q_addr;
+
+    uint32_t netif_network = netmaskip & netifip;
+    uint32_t target_network = netmaskip & target;
+    return target_network == netif_network;
+}
