@@ -23,3 +23,25 @@ net_err_t tools_init (void)
     dbg_info(DBG_TOOLS, "init tools");
     return NET_ERR_OK;
 }
+
+// 直接抄的，不做解释
+uint16_t checksum16 (void* buf, uint16_t len, uint32_t pre_sum, int complement)
+{
+    uint16_t * curr_buf = (uint16_t *)buf;
+    uint32_t checksum = pre_sum;
+
+    while (len > 1) 
+    {
+        checksum += *curr_buf++;
+        len -= 2;
+    }
+
+    if (len > 0)
+        checksum += *(uint8_t *)curr_buf;
+
+    uint16_t high;
+    while ((high = checksum >> 16) !=0)
+        checksum = high + (checksum & 0xFFFF);
+    
+    return complement ? (uint16_t)~checksum : (uint16_t)checksum;
+}

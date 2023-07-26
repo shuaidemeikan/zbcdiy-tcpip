@@ -5,6 +5,7 @@
 #include "mblock.h"
 #include "sys.h"
 #include "timer.h"
+#include "ipv4.h"
 
 // 用于保存消息队列具体内容的内存空间
 static void* msg_tbl[EXMSG_MSG_CNT];
@@ -73,7 +74,7 @@ net_err_t exmsg_netif_in(netif_t* netif)
 }
 
 /**
- * 大多数包的处理函数
+ * work_thread取到一个数据包之后就会直接丢给这个函数来处理，可以说这个函数是任何数据包进入协议栈之后经过的第一个函数
  * @param msg 要被处理的包的类型，包来自哪张网卡，这个线程根据这个去对应的网卡的in_q队列中取数据
  */
 static net_err_t do_netif_in(exmsg_t* msg)
@@ -94,9 +95,19 @@ static net_err_t do_netif_in(exmsg_t* msg)
                 pktbuf_free(buf);
                 dbg_WARNING(DBG_MSG, "netif in failed, error = %d", err);
             }
-        }else 
-            // 同样，netif内的link_layer没有的话，就没办法对这个包进行处理，应该直接返回
-            pktbuf_free(buf);
+        }
+        else 
+        {
+            // 同样，netif内的link_layer没有的话，说明这个网卡是环回网卡
+            // 仔细想一下，环回网卡其实不存在arp，再往上一层就是ip协议了，所以直接调用ip协议的进入函数就可以处理了
+
+            net_err_t err = ipv4_in(netif, buf);
+            if (err < 0)
+            {
+                pktbuf_free(buf);
+                dbg_WARNING(DBG_MSG, "netif in failed, error = %d", err);
+            }
+        }
     }
     return NET_ERR_OK;
 }

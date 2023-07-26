@@ -93,6 +93,19 @@ int ipaddr_is_local_broadcast (const ipaddr_t* ipaddr)
     return ipaddr->q_addr == 0xFFFFFFFF;
 }
 
+/**
+ * 传入一个ip地址和掩码，获得该ip地址的网络号
+ * @param ipaddr 待获取网络号的ip地址
+ * @param netmask 子网掩码
+ * @return uint32类型的网络号
+ */
+uint32_t get_network (const ipaddr_t* ipaddr, const ipaddr_t* netmask)
+{
+    uint32_t ip = ipaddr->q_addr;
+    uint32_t netmaskip = netmask->q_addr;
+    return netmaskip & ip;
+}
+
 int ipaddr_is_direct_broadcast (const ipaddr_t* ipaddr, const ipaddr_t* netmask, const ipaddr_t* targetip)
 {
     uint32_t netifip = ipaddr->q_addr;
@@ -102,4 +115,9 @@ int ipaddr_is_direct_broadcast (const ipaddr_t* ipaddr, const ipaddr_t* netmask,
     uint32_t netif_network = netmaskip & netifip;
     uint32_t target_network = netmaskip & target;
     return target_network == netif_network;
+}
+
+int ipaddr_is_match (const ipaddr_t* ipaddr, const ipaddr_t* netmask, const ipaddr_t* targetip)
+{
+
 }
