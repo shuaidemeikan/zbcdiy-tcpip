@@ -3,6 +3,7 @@
 #include "debug.h"
 #include "mblock.h"
 #include "sys.h"
+#include "tools.h"
 
 // 这里定义了整个网络协议栈用来收发数据的数据块
 // block_buffer是具体用来存储payload的数据块，由block_list串起来
@@ -893,4 +894,28 @@ net_err_t pktbuf_fill (pktbuf_t * buf, uint8_t v, int size)
         move_forward(buf, curr_fill_size);
     }
     return NET_ERR_OK;
+}
+
+uint16_t pktbuf_checksum16 (pktbuf_t * buf, int len, uint32_t pre_sum, int complement)
+{
+    dbg_assert(buf->res != 0, "buf ref == 0");
+
+    int remain_size = total_blk_remain(buf);  // buf.toal_size
+    if (remain_size < len) {
+        dbg_WARNING(DBG_BUF, "size too big");
+        return 0;
+    }
+
+    uint32_t sum = pre_sum;
+    while (len > 0) {
+        int blk_size = curr_blk_remain(buf);
+        int curr_size = (blk_size > len) ? len : blk_size;
+
+        sum = checksum16(buf->blk_offset, curr_size, sum, 0);
+
+        move_forward(buf, curr_size);
+        len -= curr_size;
+    }
+
+    return complement ? (uint16_t)~sum : (uint16_t)sum;
 }

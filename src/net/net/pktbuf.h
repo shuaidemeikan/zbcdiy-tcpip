@@ -84,5 +84,5 @@ net_err_t pktbuf_read (pktbuf_t * buf, uint8_t * dest, int size);
 net_err_t pktbuf_seek (pktbuf_t * buf, int offset);
 net_err_t pktbuf_copy (pktbuf_t * dest, pktbuf_t * src, int size);
 net_err_t pktbuf_fill (pktbuf_t * buf, uint8_t v, int size);
-
+uint16_t pktbuf_checksum16 (pktbuf_t * buf, int len, uint32_t pre_sum, int complement);
 #endif

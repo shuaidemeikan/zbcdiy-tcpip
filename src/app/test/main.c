@@ -11,6 +11,7 @@
 #include "tools.h"
 #include "timer.h"
 #include "arp.h"
+#include "ipv4.h"
 
 pcap_data_t netdev0_data = {.ip = netdev0_phy_ip, .hwaddr = netdev0_hwaddr};
 net_err_t netdev_init()
@@ -32,9 +33,11 @@ net_err_t netdev_init()
 
 	pktbuf_t* buf = pktbuf_alloc(32);
 	pktbuf_fill(buf, 0x53, 32);
-	ipaddr_t dest;
+	ipaddr_t dest, src;
 	ipaddr_from_str(&dest, friend0_ip);
-	netif_out(netif, &dest, buf);
+	ipaddr_from_str(&src, netdev0_ip);
+
+	ipv4_out(0, &dest, &src, buf);
 	return NET_ERR_OK;
 }
 

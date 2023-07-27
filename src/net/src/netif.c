@@ -459,3 +459,8 @@ net_err_t netif_out(netif_t* netif, ipaddr_t* ipaddr, pktbuf_t* buf)
         return netif->ops->xmit(netif);
     }  
 }
+
+netif_t* netif_get_default (void)
+{
+    return netif_default;
+}
