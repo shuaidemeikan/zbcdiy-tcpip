@@ -105,6 +105,8 @@ net_err_t ether_in (struct _netif_t* netif, pktbuf_t* buf)
         }
         case NET_PROTOCOL_IPV4:
         {
+            // 收到一个ip包，可以的话就直接记录一下arp，这样就不需要再单独发送arp请求了
+            arp_update_from_ipbuf(netif, buf);
             err = pktbuf_remove_header(buf, sizeof(ether_hdr_t));
             if (err < 0)
             {

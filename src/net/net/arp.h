@@ -51,4 +51,5 @@ net_err_t arp_make_gratuitous(netif_t* netif);
 net_err_t arp_in (netif_t* netif, pktbuf_t* buf);
 net_err_t arp_resolve (netif_t* netif, const ipaddr_t* ipaddr, pktbuf_t* buf);
 void arp_clear (netif_t* netif);
+void arp_update_from_ipbuf (netif_t* netif, pktbuf_t* buf);
 #endif

@@ -6,6 +6,7 @@
 #include "protocol.h"
 #include "sys.h"
 #include "timer.h"
+#include "ipv4.h"
 
 static arp_entry_t cache_tbl[ARP_CACHE_SIZE];       // arp可使用的系统中所有的内存
 static mblock_t cache_mblock;                       // 用来分配上面的数据
@@ -582,4 +583,23 @@ void arp_clear (netif_t* netif)
             nlist_remove(&cache_list, curr);
         }
     }
+}
+
+/**
+ * 收到一个ipv4的包后调用，直接把该包内的ip和mac对应信息记录下来，这样就不需要再额外发送一次arp请求了
+ * @param netif 收到包的网卡
+ * @param buf 数据链路层捕获到的ipv4的包
+ */
+void arp_update_from_ipbuf (netif_t* netif, pktbuf_t* buf)
+{
+    net_err_t err = pktbuf_set_cont(buf, sizeof(ether_hdr_t) + sizeof(ipv4_hdr_t));
+    if (err < 0) {
+        dbg_ERROR(DBG_ARP, "ajust header fialed.");
+        return;
+    }
+
+    ether_hdr_t* ether_hdr = (ether_hdr_t*)pktbuf_data(buf);
+    ipv4_hdr_t* ip_hdr = (ipv4_hdr_t*)((uint8_t*)ether_hdr + sizeof(ether_hdr_t));
+
+    cache_insert(netif, ip_hdr->src_ip, ether_hdr->src, 0);
 }
