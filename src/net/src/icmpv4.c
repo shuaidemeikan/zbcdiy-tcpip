@@ -119,9 +119,10 @@ net_err_t icmpv4_in (ipaddr_t* src_ip, ipaddr_t* netif_ip, pktbuf_t* buf)
 /**
  * 利用icmp发送一个端口不可达的报文
  * 该报文发送时，需要将收到的ip包从ip包头往后576个字节拷贝到待发送包的尾部
- * @param src_ip 源地址
- * @param netif_ip 接收到该包的网卡地址
- * @param buf 接收到的包(没有移除ip包头)
+ * @param dest_ip 目的地址
+ * @param src 源地址
+ * @param code 编号
+ * @param ip_buf 收到的端口不可达的udp包
  * @return net_err错误类型
  */
 net_err_t icmpv4_out_unreach (ipaddr_t* dest_ip, ipaddr_t* src, uint8_t code, pktbuf_t* ip_buf)
