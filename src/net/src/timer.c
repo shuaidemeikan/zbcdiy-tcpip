@@ -127,8 +127,6 @@ void net_timer_remove (net_timer_t* timer)
 
 net_err_t net_timer_check_tmo (int diff_ms)
 {
-    plat_printf("-------start check timer---------\n");
-    plat_printf("diff_ms = %d\n", diff_ms);
     display_timer_list();
     static nlist_t timeout_timer;
     nlist_init(&timeout_timer);
@@ -171,7 +169,6 @@ net_err_t net_timer_check_tmo (int diff_ms)
     }
 
     display_timer_list();
-    plat_printf("-------end check timer---------\n");
     return NET_ERR_OK;
 }
 

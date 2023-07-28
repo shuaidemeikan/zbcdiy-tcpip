@@ -1,4 +1,4 @@
-#include "tools.h"
+﻿#include "tools.h"
 #include "debug.h"
 
 static int is_litte_endian(void)

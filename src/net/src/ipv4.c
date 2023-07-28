@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "tools.h"
 #include "protocol.h"
+#include "icmpv4.h"
 
 static uint16_t packet_id = 0;
 
@@ -78,6 +79,10 @@ static net_err_t is_pkt_ok (ipv4_pkt_t* pkt, int size, netif_t* netif)
     
 }
 
+/**
+ * IPV4的初始化函数，理论上可以不要
+ * @return net_err错误类型
+ */
 net_err_t ipv4_init (void)
 {
     dbg_info(DBG_IP, "init ip\n");
@@ -86,6 +91,14 @@ net_err_t ipv4_init (void)
     return NET_ERR_OK;
 }
 
+/**
+ * 判断一下接收到的数据包属于什么上层协议，直接丢给上层协议了，离开ip协议的最后一层函数
+ * @param netif 收到数据包的网卡
+ * @param buf 收到的数据包(已移除以太网包头，但是没移除ip包头)
+ * @param scr_ip 数据包内的源地址
+ * @param dest_ip 数据包内的目的地址
+ * @return net_err错误类型
+ */
 net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t* dest_ip)
 {
     ipv4_pkt_t* pkt = (ipv4_pkt_t*)pktbuf_data(buf);
@@ -93,7 +106,10 @@ net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t
     switch (pkt->hdr.protocol)
     {
     case NET_PROTOCOL_ICMPv4:
+    {
+        icmpv4_in(src_ip, &netif->ipaddr, buf);
         break;
+    }
     case NET_PROTOCOL_UDP:
         break;
     case NET_PROTOCOL_TCP:
@@ -107,6 +123,12 @@ net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t
     return NET_ERR_UNREACH;
 }
 
+/**
+ * 收到ip数据包后第一层用来处理的函数
+ * 设置一下包头的连续性，判断一下数据包的正确与否，是否是发给自己的，最后直接丢给ip_normal_in了
+ * @param 待发送的arp表项
+ * @return net_err错误类型
+ */
 net_err_t ipv4_in (netif_t* netif, pktbuf_t* buf)
 {
     dbg_info(DBG_IP, "ip in\n");
@@ -149,6 +171,14 @@ net_err_t ipv4_in (netif_t* netif, pktbuf_t* buf)
     return NET_ERR_OK;
 }
 
+/**
+ * 把一个上层协议的包用ip封装好，然后发出去
+ * @param protocol 上层协议
+ * @param dest 目的地之
+ * @param src 源地址
+ * @param buf 待发送的数据包(还没添加ip包头)
+ * @return net_err错误类型
+ */
 net_err_t ipv4_out(uint8_t protocol, ipaddr_t* dest, ipaddr_t* src, pktbuf_t* buf)
 {
     dbg_info(DBG_IP, "send an ip pkt");

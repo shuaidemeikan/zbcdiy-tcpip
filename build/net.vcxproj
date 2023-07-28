@@ -319,6 +319,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\ether.h" />
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\exmsg.h" />
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\fixq.h" />
+    <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\icmpv4.h" />
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\ipaddr.h" />
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\ipv4.h" />
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\loop.h" />
@@ -339,6 +340,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\ether.c" />
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\exmsg.c" />
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\fixq.c" />
+    <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\icmpv4.c" />
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\ipaddr.c" />
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\ipv4.c" />
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\loop.c" />

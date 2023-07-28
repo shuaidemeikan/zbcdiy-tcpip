@@ -10,9 +10,10 @@
 #define DBG_NETIF       DBG_LEVEL_INFO
 #define DBG_ETHER       DBG_LEVEL_INFO
 #define DBG_TOOLS       DBG_LEVEL_INFO
-#define DBG_TIMER       DBG_LEVEL_NONE 
+#define DBG_TIMER       DBG_LEVEL_INFO
 #define DBG_ARP         DBG_LEVEL_INFO
 #define DBG_IP          DBG_LEVEL_INFO
+#define DBG_ICMPv4      DBG_LEVEL_INFO
 
 #define NET_ENDIAN_LITTLE           1
 
