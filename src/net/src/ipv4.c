@@ -111,6 +111,8 @@ net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t
         break;
     }
     case NET_PROTOCOL_UDP:
+        iphdr_htons(pkt);
+        icmpv4_out_unreach(src_ip, &netif->ipaddr, ICMPv4_UNREACH_PORT, buf);
         break;
     case NET_PROTOCOL_TCP:
         break;

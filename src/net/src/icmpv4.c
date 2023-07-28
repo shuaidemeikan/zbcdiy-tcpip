@@ -115,3 +115,51 @@ net_err_t icmpv4_in (ipaddr_t* src_ip, ipaddr_t* netif_ip, pktbuf_t* buf)
     }
     }
 }
+
+/**
+ * 利用icmp发送一个端口不可达的报文
+ * 该报文发送时，需要将收到的ip包从ip包头往后576个字节拷贝到待发送包的尾部
+ * @param src_ip 源地址
+ * @param netif_ip 接收到该包的网卡地址
+ * @param buf 接收到的包(没有移除ip包头)
+ * @return net_err错误类型
+ */
+net_err_t icmpv4_out_unreach (ipaddr_t* dest_ip, ipaddr_t* src, uint8_t code, pktbuf_t* ip_buf)
+{
+    int copy_size = ipv4_hdr_size((ipv4_pkt_t*)pktbuf_data(ip_buf)) + 576;
+    if (copy_size > ip_buf->total_size)
+        copy_size = ip_buf->total_size;
+    
+    // 新数据包的大小为尾部填充的大小+icmp包头的大小
+    pktbuf_t* new_buf = pktbuf_alloc(copy_size + sizeof(icmpv4_hdr_t) + 4);
+    if (!new_buf)
+    {
+        dbg_WARNING(DBG_ICMPv4, "alloc buf failed");
+        return NET_ERR_NONE;
+    }
+
+    icmpv4_pkt_t* pkt = (icmpv4_pkt_t*)pktbuf_data(new_buf);
+    pkt->hdr.type = ICMPv4_UNREACH;
+    pkt->hdr.code = code;
+    pkt->hdr.checksum16 = 0;
+    pkt->reverse = 0;
+
+    pktbuf_reset_acc(ip_buf);
+    pktbuf_seek(new_buf, sizeof(icmpv4_hdr_t) + 4);
+    net_err_t err= pktbuf_copy(new_buf, ip_buf, copy_size);
+    if (err < 0)
+    {
+        dbg_ERROR(DBG_ICMPv4, "copy failed");
+        pktbuf_free(new_buf);
+        return err;
+    }
+    
+    err = icmpv4_out(dest_ip, src, new_buf);
+    if (err < 0)
+    {
+        dbg_ERROR(DBG_ICMPv4, "send icmp unreach");
+        pktbuf_free(new_buf);
+        return err;
+    }
+    return NET_ERR_OK;
+}

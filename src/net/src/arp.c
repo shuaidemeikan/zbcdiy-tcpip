@@ -551,7 +551,7 @@ net_err_t arp_in (netif_t* netif, pktbuf_t* buf)
     if (ipaddr_is_equal(&target_ip, &netif->ipaddr))
     {
         cache_insert(netif, arp_packet->sender_paddr, arp_packet->sender_hwaddr, 1);
-        if (x_ntohs(arp_packet->opcode == ARP_REQUEST))
+        if (x_ntohs(arp_packet->opcode) == ARP_REQUEST)
         {
             dbg_info(DBG_ARP, "arp request, send reply");
             return arp_make_reply(netif, buf);
