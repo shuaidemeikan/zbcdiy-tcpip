@@ -11,6 +11,36 @@ static ip_frag_t frag_array[IP_FRAGS_MAX_NR];
 static mblock_t frag_mblock;
 static nlist_t frag_list;
 
+/**
+ * 获得一个ip数据包数据部分的大小，也就是不含头部多大
+ * @param pkt 待判断的ip数据包
+ * @return net_err错误类型
+ */
+static int get_data_size (ipv4_pkt_t* pkt)
+{
+    return pkt->hdr.total_len - ipv4_hdr_size(pkt);
+}
+
+/**
+ * 获得一个ip数据包的分片偏移
+ * @param pkt 待判断的ip数据包
+ * @return net_err错误类型
+ */
+static uint16_t get_frag_start (ipv4_pkt_t* pkt)
+{
+    return pkt->hdr.frag_offset * 8;
+}
+
+/**
+ * 获得一个ip数据包的offset长度，也就是这个ip数据包的offset是多少到多少
+ * @param pkt 待判断的ip数据包
+ * @return net_err错误类型
+ */
+static uint16_t get_frag_end (ipv4_pkt_t* pkt)
+{
+    return get_frag_start(pkt) + get_data_size(pkt);
+}
+
 #if DBG_DISP_ENABLED(DBG_IP)
 static void display_ip_pkt(ipv4_pkt_t* pkt)
 {
@@ -29,9 +59,82 @@ static void display_ip_pkt(ipv4_pkt_t* pkt)
     dbg_dump_ip_buf(" dest ip:", ip_hdr->dest_ip);
     plat_printf("\n--------------ip end ---------------\n");
 }
+
+static void display_ip_frags (void)
+{
+    int f_index = 0;
+    nlist_node_t* f_node;
+    nlist_for_each(f_node, &frag_list)
+    {
+        ip_frag_t* frag = nlist_entry(f_node, ip_frag_t, node);
+
+        plat_printf("[%d]: \n", f_index++);
+        dbg_dump_ip("   ip:", &frag->ip);
+        plat_printf("   tmp: %d\n", frag->id);
+        plat_printf("   tmo: %d\n", frag->tmo);
+        plat_printf("   bufs: %d\n", nlist_count(&frag->buf_list));
+
+        plat_printf("   bufs:\n");
+        nlist_node_t* p_node;
+        int p_index = 0;
+        nlist_for_each(p_node, &frag->buf_list)
+        {
+            pktbuf_t* buf = nlist_entry(p_node, pktbuf_t, node);
+            ipv4_pkt_t* pkt = (ipv4_pkt_t*)pktbuf_data(buf);
+            plat_printf("   B%d:[%d-%d],    ", p_index++, get_frag_start(pkt), get_frag_end(pkt));
+        }
+        plat_printf("\n");
+    }
+}
 #else
 #define display_ip_pkt(a)
+#define display_ip_frags
 #endif
+
+/**
+ * 释放一个分片缓存内串着的待合并的数据包
+ * @param frag 待释放数据包的分片缓存
+ */
+static void frag_free_buf_list (ip_frag_t* frag)
+{
+    nlist_node_t* node;
+    while ((node = nlist_remove_first(&frag->buf_list)))
+    {
+        pktbuf_t* buf = nlist_entry(node, pktbuf_t, node);
+        pktbuf_free(buf);
+    }
+}
+
+/**
+ * 分配一个ip分片缓存
+ * @return ip_frag_t*类型的分片结构
+ */
+static ip_frag_t* frag_alloc (void)
+{
+    ip_frag_t* frag = mblock_alloc(&frag_mblock, -1);
+    // 如果获得不到，就把已经在表里的分片缓存里最晚没更新的分片给释放掉，用来当新的分片结构
+    if (!frag)
+    {
+        nlist_node_t* node = nlist_remove_last(&frag_list);
+        frag = nlist_entry(node, ip_frag_t, node);
+        if (frag)
+        {
+            frag_free_buf_list(frag);
+        }
+    }
+    return frag;
+}
+
+/**
+ * 释放一个分片缓存
+ * @param pkt 待释放的分片缓存
+ */
+static void frag_free (ip_frag_t* frag)
+{
+    frag_free_buf_list(frag);
+    nlist_remove(&frag_list, &frag->node);
+    mblock_free(&frag_mblock, frag);
+}
 
 static inline void iphdr_ntohs (ipv4_pkt_t* pkt)
 {
@@ -84,6 +187,169 @@ static net_err_t is_pkt_ok (ipv4_pkt_t* pkt, int size, netif_t* netif)
     // 一切正常
     return NET_ERR_OK;
     
+}
+
+/**
+ * 往全局的分片缓存链表里插入一个分片缓存，并在此之前初始化它
+ * @param frag 待初始化和插入的分片缓存
+ * @param ip 该分片缓存内的数据包来自于哪个ip
+ * @param id 该分片缓存内的数据包来自于哪个id
+ */
+static void frag_add (ip_frag_t* frag, ipaddr_t* ip, uint16_t id)
+{
+    ipaddr_copy(&frag->ip, ip);
+    frag->tmo = 0;
+    frag->id = id;
+    nlist_node_init(&frag->node);
+    nlist_init(&frag->buf_list);
+
+    nlist_insert_first(&frag_list, &frag->node);
+}
+
+/**
+ * 查找一个分片缓存是否在全局分片缓存链表里
+ * @param ip 待查找的分片缓存ip
+ * @param id 待查找的分片缓存id
+ * @return 查找到的分片缓存
+ */
+static ip_frag_t* frag_find (ipaddr_t* ip, uint16_t id)
+{
+    nlist_node_t* curr;
+    nlist_for_each(curr, &frag_list)
+    {
+        ip_frag_t* frag = nlist_entry(curr, ip_frag_t, node);
+        if (ipaddr_is_equal(&frag->ip, ip) && (id == frag->id))
+        {
+            // 查找了，就说明很快就会用到它了，所以先把它放到链表的前面
+            if (nlist_first(&frag_list) != curr)
+            {
+                nlist_remove(&frag_list, curr);
+                nlist_insert_first(&frag_list, curr);
+            }
+            return frag;
+        }
+    }
+    return (ip_frag_t*)0;
+}
+
+/**
+ * 往一个分片缓存内插入一个buf
+ * @param frag 待被插入的分片缓存
+ * @param buf 待插入的buf
+ * @param pkt 被插入的buf来自的pkt
+ * @return net_err错误类型
+ */
+static net_err_t frag_insert (ip_frag_t* frag, pktbuf_t* buf, ipv4_pkt_t* pkt)
+{
+    // 一个分片缓存内能存储的最大buf数是有限的，防止整个协议栈的pktbuf结构全部消耗到这里了，超出数量的分片就是协议栈不支持
+    if (nlist_count(&frag->buf_list) >= IP_FRAG_MAX_BUF_NR)
+    {
+        dbg_WARNING(DBG_IP, "too many bufs on frag");
+        frag_free(frag);
+        return NET_ERR_FULL;
+    }
+
+    nlist_node_t* node;
+    nlist_for_each(node, &frag->buf_list)
+    {
+        pktbuf_t* curr_buf = nlist_entry(node, pktbuf_t, node);
+        ipv4_pkt_t* curr_pkt = (ipv4_pkt_t*)pktbuf_data(curr_buf);
+
+        uint16_t curr_start = get_frag_start(curr_pkt);
+        uint16_t pkt_start = get_frag_start(pkt);
+        // 当前数据包的offset不可能和分片缓存内已经有的数据包的offset相同
+        // 所以出现这种情况，可以判断为是中间网络有bug，把某个包发了两次
+        if (pkt_start == curr_start)
+            return NET_ERR_EXIST;
+        // 当新来的数据包offset比遍历到的数据包的offset小，那么就说明这个数据包应该是排在当前遍历到的数据包前面的
+        else if (pkt_start <= curr_start)
+        {
+            nlist_node_t* pre = nlist_node_pre(node);
+            // 如果当前遍历到的数据包前面没雨数据包了，那么直接调用头插入就ok了
+            if (pre)
+                nlist_insert_after(&frag->buf_list, pre, &buf->node);
+            else
+                nlist_insert_first(&frag->buf_list, &buf->node);
+            return NET_ERR_OK;
+        }
+    }
+    // 如果没有出现上面两种情况，那么直接把数据包插在整个链表的末尾就可以了
+    nlist_insert_last(&frag->buf_list, &buf->node);
+    return NET_ERR_OK;
+}
+
+/**
+ * 判断一个分片缓存是否已经收齐，但是在这里不做最后的判断，这里只是把最后一个数据包的more返回出去，由上层函数来判断
+ * @param frag 待判断的分片缓存
+ * @return more的值
+ */
+static int frag_is_all_arrived (ip_frag_t* frag)
+{
+    int offset = 0;
+
+    nlist_node_t* node;
+    ipv4_pkt_t* pkt = (ipv4_pkt_t*)0;
+    nlist_for_each(node, &frag->buf_list)
+    {
+        pktbuf_t* buf = nlist_entry(node, pktbuf_t, node);
+        pkt = (ipv4_pkt_t*)pktbuf_data(buf);
+        if (get_frag_start(pkt) != offset)
+            return 0;
+        
+        offset += get_frag_start(pkt);
+    }
+    return pkt ? !pkt->hdr.more : 0;
+}
+
+/**
+ * 将一个分片缓存内的数据包合并成一个pktbuf结构，并返回
+ * @param frag 待合成的分片缓存
+ * @return 合成后的pktbuf
+ */
+static pktbuf_t* frag_join (ip_frag_t* frag)
+{
+    pktbuf_t* target = (pktbuf_t*)0;
+    nlist_node_t* node;
+    while (node = nlist_remove_first(&frag->buf_list))
+    {
+        pktbuf_t* curr = nlist_entry(node, pktbuf_t, node);
+        // 如果是第一个，那么直接把target指向这个就ok
+        if (!target)
+        {
+            target = curr;
+            continue;
+        }
+
+        // 移除当前遍历到的数据包包头
+        net_err_t err = pktbuf_remove_header(curr, ipv4_hdr_size((ipv4_pkt_t*)pktbuf_data(curr)));
+        if (err < 0)
+        {
+            dbg_ERROR(DBG_IP, "remove hdr failed.");
+            // 由于curr已经被移除了，所以释放我们必须在这里完成，否则一旦返回，curr就不会有被释放的可能，下面也是同理
+            pktbuf_free(curr);
+            goto free_and_return;
+        }
+
+        // 把新的数据包串到target上
+        err = pktbuf_join(target, curr);
+        if (err < 0)
+        {
+            dbg_ERROR(DBG_IP, "join ip frag failed.");
+            pktbuf_free(curr);
+            goto free_and_return;
+        }
+    }
+    // 走到这里，说明所有数据包全部正确的串上了，把当前分片缓存释放掉，然后返回合成好的pktbuf
+    frag_free(frag);
+    return target;
+
+free_and_return:
+    // 如果上面出问题，那么target也是需要被回收的
+    if (target)
+        pktbuf_free(target);
+    // 上面任何一个步骤失败，都会导致该分片缓存寄，所以分片缓存也需要被释放
+    frag_free(frag);
+    return (pktbuf_t*)0;
 }
 
 static net_err_t frag_init (void)
@@ -147,6 +413,57 @@ net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t
 }
 
 /**
+ * 收到ip分片数据包后的处理函数，该函数调用后，将调用其他一系列函数对该分片数据包进行解析
+ * 包括但不限于:该数据包属于哪一个分片缓存，该分片缓存是否已满，是否需要发送出去...
+ * @param netif 收到分片数据包的网卡
+ * @param buf 分片数据包本体
+ * @param src_ip 该分片数据包从哪个ip来
+ * @param dest_ip 该分片数据包要发到哪个ip
+ * @return net_err错误类型
+ */
+net_err_t ip_frag_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t* dest_ip)
+{
+    ipv4_pkt_t* curr = (ipv4_pkt_t*)pktbuf_data(buf);
+    
+    // 先看看这个包在全局分片缓存链表中是否存在
+    ip_frag_t* frag = frag_find(src_ip, curr->hdr.id);
+    if (!frag)
+    {
+        // 不存在，就分配一个新的分片缓存，并把其添加到全局分片缓存链表中
+        frag = frag_alloc();
+        frag_add(frag, src_ip, curr->hdr.id);
+    }
+
+    // 不论存不存在，走到这都会有了一个分片缓存，把buf插入到这个分片缓存里
+    net_err_t err = frag_insert(frag, buf, curr);
+
+    // 判断该分片缓存是否已收到全部的分片数据包
+    if (frag_is_all_arrived(frag))
+    {
+        // 如果收到了，就合并分片缓存下串着的数据包
+        pktbuf_t* full_buf = frag_join(frag);
+        if (!full_buf)
+        {
+            dbg_ERROR(DBG_IP, "join ip bufs failed.");
+            display_ip_frags();
+            return NET_ERR_OK;
+        }
+
+        // 然后调用通用的发送接口发送出去
+        err = ip_normal_in(netif, full_buf, src_ip, dest_ip);
+        if (err < 0)
+        {
+            dbg_WARNING(DBG_IP, "ip frag in failed.", err);
+            pktbuf_free(full_buf);
+            return NET_ERR_OK;
+        }
+    }
+    display_ip_frags();
+
+    return NET_ERR_OK;
+}
+
+/**
  * 收到ip数据包后第一层用来处理的函数
  * 设置一下包头的连续性，判断一下数据包的正确与否，是否是发给自己的，最后直接丢给ip_normal_in了
  * @param 待发送的arp表项
@@ -187,9 +504,10 @@ net_err_t ipv4_in (netif_t* netif, pktbuf_t* buf)
         return NET_ERR_UNREACH;
     }
 
-    // 解析ip包中承载的上层协议
-    err = ip_normal_in(netif, buf, &src_ip, &dest_ip);
-
+    if (pkt->hdr.frag_offset || pkt->hdr.more)
+        err = ip_frag_in(netif, buf, &src_ip, &dest_ip);
+    else
+        err = ip_normal_in(netif, buf, &src_ip, &dest_ip);
     
     return NET_ERR_OK;
 }

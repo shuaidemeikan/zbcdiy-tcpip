@@ -68,11 +68,11 @@ typedef struct _ipv4_pkt_t
 
 typedef struct _ip_frag_t
 {
-    ipaddr_t* ip;               // 标识这个分片组都是从哪个ip收到的数据包
+    ipaddr_t ip;               // 标识这个分片组都是从哪个ip收到的数据包
     uint16_t id;                // 分片id
     int tmo;                    // 等待新分片的超时时间
     nlist_t buf_list;
-    nlist_node_t* node;
+    nlist_node_t node;
 }ip_frag_t;
 
 net_err_t ipv4_init (void);

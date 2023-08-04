@@ -9,6 +9,7 @@
 #include "timer.h"
 #include "ether.h"
 #include "arp.h"
+#include "ipv4.h"
 
 net_err_t net_init(void)
 {
@@ -21,6 +22,7 @@ net_err_t net_init(void)
     loop_init();
     ether_init();
     arp_init();
+    ipv4_init();
     return NET_ERR_OK;
 }
 net_err_t net_start(void)
