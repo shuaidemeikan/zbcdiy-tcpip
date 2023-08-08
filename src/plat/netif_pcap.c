@@ -52,7 +52,7 @@ void xmit_thread(void* arg)
     netif_t* netif = (netif_t*)arg;
     pcap_t* pcap = (pcap_t*)netif->ops_data;
     static uint8_t rw_buffer[1500+6+6+2];
-    plat_memset(rw_buffer, 0, sizeof(rw_buffer));
+    
     while(1)
     {
         // 从网卡的消息输出队列里取一个包，没有包就一直等
@@ -62,6 +62,7 @@ void xmit_thread(void* arg)
         
         // 走到这里就说明从网卡的输出消息队列里拿到了一个包
         int total_size = buf->total_size;
+        plat_memset(rw_buffer, 0, sizeof(rw_buffer));
         pktbuf_read(buf, rw_buffer, total_size);
         pktbuf_free(buf);
 

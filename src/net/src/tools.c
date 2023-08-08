@@ -25,23 +25,31 @@ net_err_t tools_init (void)
 }
 
 // 直接抄的，不做解释
-uint16_t checksum16 (void* buf, uint16_t len, uint32_t pre_sum, int complement)
-{
+uint16_t checksum16 (int offset, void * buf, uint16_t len, uint32_t pre_sum, int complement) {
     uint16_t * curr_buf = (uint16_t *)buf;
     uint32_t checksum = pre_sum;
 
-    while (len > 1) 
-    {
+    if (offset & 0x1) {
+        // checksum += *curr_buf++ << 8;
+        uint8_t * buf = (uint8_t *)curr_buf;
+        checksum += *buf++ << 8;
+        curr_buf = (uint16_t *)buf;
+        len--;
+    }
+
+    while (len > 1) {
         checksum += *curr_buf++;
         len -= 2;
     }
 
-    if (len > 0)
+    if (len > 0) {
         checksum += *(uint8_t *)curr_buf;
+    }
 
     uint16_t high;
-    while ((high = checksum >> 16) !=0)
+    while ((high = checksum >> 16) !=0) {
         checksum = high + (checksum & 0xFFFF);
+    }
     
     return complement ? (uint16_t)~checksum : (uint16_t)checksum;
 }

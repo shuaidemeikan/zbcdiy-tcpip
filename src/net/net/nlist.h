@@ -87,7 +87,7 @@ static inline nlist_node_t* nlist_remove_first(nlist_t* list)
 {
     nlist_node_t* first = nlist_first(list);
     if (first)
-        nlist_remove(list, list->first);
+        nlist_remove(list, first);
     return first;
 }
 

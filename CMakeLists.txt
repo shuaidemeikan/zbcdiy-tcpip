@@ -1,16 +1,13 @@
 # cmake最低版本要求
 cmake_minimum_required(VERSION 3.7)
 
-# 设置工程的名字，生成的可执行文件也将使用该名称，如net.exe
+# 设置工程的名字
 project(net)
 set(CMAKE_C_STANDARD 99)
 
-LINK_DIRECTORIES(
-    ${PROJECT_SOURCE_DIR}/npcap/Lib/x64          # win64使用
-    #${PROJECT_SOURCE_DIR}/lib/npcap/Lib/             # win32使用
-)
+LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/npcap/Lib/x64)
 
-# 给visual studio编译器使用的宏，Enable GCC debug
+# 给visual studio编译器添加的宏，跳过一些vs添加的更安全的函数的检查
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 
 # 头文件搜索路径，使得c文件中可以直接使用#include "xxx.h"，而不必加前缀

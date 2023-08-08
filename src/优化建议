@@ -1,2 +1,0 @@
-1、netif_set_addr太过冗杂，需要在外面先定义几个ipaddr_t，然后再把ipaddr_t的数据取出来，完全可以把所有过程都在netif_set_addr内完成
-2、芝士测试

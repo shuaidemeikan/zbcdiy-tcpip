@@ -345,7 +345,7 @@ pktbuf_t* pktbuf_alloc(int size)
 void pktbuf_free(pktbuf_t* buf)
 {
     nlocker_lock(&locker);
-    if ((--(buf->res)) != 0)
+    if ((--buf->res) == 0)
     {
         pktblock_free_list(pktbuf_first_blk(buf));
         mblock_free(&pktbuf_list, buf);
@@ -902,19 +902,21 @@ uint16_t pktbuf_checksum16 (pktbuf_t * buf, int len, uint32_t pre_sum, int compl
 
     int remain_size = total_blk_remain(buf);  // buf.toal_size
     if (remain_size < len) {
-        dbg_WARNING(DBG_BUF, "size too big");
+        dbg_warning(DBG_BUF, "size too big");
         return 0;
     }
 
     uint32_t sum = pre_sum;
+    uint32_t offset = 0;
     while (len > 0) {
         int blk_size = curr_blk_remain(buf);
         int curr_size = (blk_size > len) ? len : blk_size;
 
-        sum = checksum16(buf->blk_offset, curr_size, sum, 0);
+        sum = checksum16(offset, buf->blk_offset, curr_size, sum, 0);
 
         move_forward(buf, curr_size);
         len -= curr_size;
+        offset += curr_size;
     }
 
     return complement ? (uint16_t)~sum : (uint16_t)sum;

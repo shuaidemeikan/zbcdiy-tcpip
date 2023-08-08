@@ -1,6 +1,9 @@
 #ifndef NET_CFG_H
 #define NET_CFG_H
 
+#define dbg_error   dbg_error
+#define dbg_warning dbg_WARNING
+
 #define DBG_MBLOCK      DBG_LEVEL_INFO
 #define DGB_QUEUE       DBG_LEVEL_INFO
 #define DBG_MSG         DBG_LEVEL_INFO
@@ -24,8 +27,8 @@
 #define EXMSG_LOCKER    NLOCKER_THREAD
 
 #define PKTBUF_BLK_SIZE     128
-#define PKTBUF_BUF_CNT      300
-#define PKTBUF_BLK_CNT      300
+#define PKTBUF_BUF_CNT      150
+#define PKTBUF_BLK_CNT      150
 
 #define NETIF_HWADDR_SIZE   10
 #define NETIF_NAME_SIZE     10
@@ -44,4 +47,6 @@
 
 #define IP_FRAGS_MAX_NR         5
 #define IP_FRAG_MAX_BUF_NR      20
+#define IP_FRAG_SCAN_PERIOD     1
+#define IP_FRAG_TMO             10
 #endif // !NET_CFG_H
