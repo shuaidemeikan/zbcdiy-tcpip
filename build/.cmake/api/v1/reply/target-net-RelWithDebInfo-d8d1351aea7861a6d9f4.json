@@ -131,8 +131,7 @@
 			"sourceIndexes" : 
 			[
 				0,
-				22,
-				23,
+				1,
 				24,
 				25,
 				26,
@@ -149,8 +148,10 @@
 				37,
 				38,
 				39,
+				40,
 				41,
-				43
+				43,
+				45
 			]
 		}
 	],
@@ -214,8 +215,7 @@
 			"sourceIndexes" : 
 			[
 				0,
-				22,
-				23,
+				1,
 				24,
 				25,
 				26,
@@ -232,15 +232,16 @@
 				37,
 				38,
 				39,
+				40,
 				41,
-				43
+				43,
+				45
 			]
 		},
 		{
 			"name" : "Header Files",
 			"sourceIndexes" : 
 			[
-				1,
 				2,
 				3,
 				4,
@@ -261,9 +262,11 @@
 				19,
 				20,
 				21,
-				40,
+				22,
+				23,
 				42,
-				44
+				44,
+				46
 			]
 		}
 	],
@@ -274,6 +277,17 @@
 			"compileGroupIndex" : 0,
 			"path" : "src/app/test/main.c",
 			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/app/test/ping/ping.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/app/test/ping/ping.h",
+			"sourceGroupIndex" : 1
 		},
 		{
 			"backtrace" : 1,

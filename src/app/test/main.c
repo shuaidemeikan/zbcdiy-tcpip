@@ -12,6 +12,7 @@
 #include "timer.h"
 #include "arp.h"
 #include "ipv4.h"
+#include "ping\ping.h"
 
 pcap_data_t netdev0_data = {.ip = netdev0_phy_ip, .hwaddr = netdev0_hwaddr};
 net_err_t netdev_init()
@@ -280,9 +281,19 @@ int main (void) {
 	
 	basic_test();
 
+	ping_t p;
+	//ping_run(&p, friend0_ip, 4, 64, 1000);
+
 	dbg_info(DBG_LEVEL_ERROR, "my is test,a1 = %d a2 = %d\n",1,2);
+	char cmd[32], param[32];
 	while(1)
-		sys_sleep(10);
+	{
+		plat_printf(">>");
+		scanf("%s%s", cmd, param);
+		if (strcmp(cmd, "ping") == 0)
+			ping_run(&p, param, 4, 1000, 1000);
+	}
+		
 	
 	
 	
