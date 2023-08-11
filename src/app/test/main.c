@@ -13,6 +13,7 @@
 #include "arp.h"
 #include "ipv4.h"
 #include "ping\ping.h"
+#include "exmsg.h"
 
 pcap_data_t netdev0_data = {.ip = netdev0_phy_ip, .hwaddr = netdev0_hwaddr};
 net_err_t netdev_init()
@@ -284,7 +285,10 @@ int main (void) {
 	ping_t p;
 	//ping_run(&p, friend0_ip, 4, 64, 1000);
 
-	dbg_info(DBG_LEVEL_ERROR, "my is test,a1 = %d a2 = %d\n",1,2);
+	net_err_t test_func (struct _func_msg_t * msg);
+	int arg = 0x1234;
+	net_err_t err = exmsg_func_exec(test_func, &arg);
+
 	char cmd[32], param[32];
 	while(1)
 	{
@@ -294,36 +298,6 @@ int main (void) {
 			ping_run(&p, param, 4, 1000, 1000);
 	}
 		
-	
-	
-	
-	pcap_t* pcap = pcap_device_open(netdev0_phy_ip, netdev0_hwaddr);
-	while (pcap)
-	{
-		static uint8_t buffer[1024];
-		static int counter = 0;
-		struct pcap_pkthdr* pkthdr;
-		const uint8_t* pkt_data;
-		plat_printf("begin test: %d\n", counter++);
-		for (int i = 0; i< sizeof(buffer); i++)
-			buffer[i] = i;
-		
-		if (pcap_next_ex(pcap, &pkthdr, &pkt_data) != 1)
-			continue;
-		
-		int len = pkthdr->len > sizeof(buffer) ? sizeof(buffer) : pkthdr->len;
-		plat_memcpy(buffer, pkt_data, len);
-		buffer[0] = 1;
-		buffer[1] = 2;
-
-		if (pcap_inject(pcap, buffer, sizeof(buffer)) == -1)
-		{
-			plat_printf("pcap send: send packet failed %s\n", pcap_geterr(pcap));
-			break;
-		}
-
-		sys_sleep(10);
-	}
 
 	printf("Hello, world");
 	return 0;

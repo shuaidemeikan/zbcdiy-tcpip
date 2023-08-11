@@ -327,6 +327,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\loop.h" />
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\mblock.h" />
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\net.h" />
+    <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\net_api.h" />
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\net_cfg.h" />
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\net_err.h" />
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\netif.h" />
@@ -348,6 +349,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\loop.c" />
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\mblock.c" />
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\net.c" />
+    <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\net_api.c" />
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\netif.c" />
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\nlist.c" />
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\nlocker.c" />

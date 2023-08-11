@@ -1,6 +1,7 @@
 ﻿#include "ping.h"
 #include <WinSock2.h>
 #include "sys_plat.h"
+//#include "net_api.h"
 
 uint16_t checksum (void * buf, uint16_t len) 
 {
@@ -75,7 +76,7 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
 
         do
         {
-            struct sockaddr_in from_addr;
+            //struct sockaddr_in from_addr;
             int addr_len = sizeof(addr);
             //size = recvfrom(s, (char*)&ping->reply, sizeof(ping->reply), 0, (struct sockaddr*)&from_addr, &addr_len);
             size = recv(s, (char*)&ping->reply, sizeof(ping->reply), 0);

@@ -16,6 +16,62 @@ static exmsg_t msg_buffer[EXMSG_MSG_CNT];
 // 用于临时接受数据的链表本体
 static mblock_t msg_block;
 
+net_err_t test_func (struct _func_msg_t* msg)
+{
+    printf("hello, 1234: 0x%x", *(int *)msg->param);
+    return NET_ERR_OK;
+}
+
+net_err_t exmsg_func_exec (exmsg_func_t func, void* param)
+{
+    func_msg_t func_msg;
+    func_msg.err = NET_ERR_OK;
+    func_msg.func = func;
+    func_msg.param = param;
+    func_msg.wait_sem = sys_sem_create(0);
+    if (func_msg.wait_sem == SYS_SEM_INVALID)
+    {
+        dbg_ERROR(DBG_MSG, "err create wait sem");
+        return NET_ERR_MEM;
+    }
+
+    exmsg_t* msg = mblock_alloc(&msg_block, 0);
+    if (!msg)
+    {
+        dbg_WARNING(DBG_MSG, "no free block.");
+        sys_sem_free(func_msg.wait_sem);
+        return NET_ERR_MEM;
+    }
+
+    msg->type = NET_EXMSG_FUN;
+    msg->func = &func_msg;
+
+    // 把刚刚临时存的信息放到消息队列里
+    net_err_t err = fixq_send(&msg_queue, msg, 0);
+    if (err < 0)
+    {
+        dbg_WARNING(DBG_MSG, "fixq full.");
+        // 如果发生错误，需要把上面拿到的链表的节点释放掉
+        mblock_free(&msg_block, msg);
+        sys_sem_free(func_msg.wait_sem);
+        return err;
+    }
+
+    sys_sem_wait(func_msg.wait_sem, 0);
+    dbg_info(DBG_MSG, "end call func: %p", func);
+    return NET_ERR_OK;
+}
+
+void do_func (func_msg_t* func_msg)
+{
+    dbg_info(DBG_MSG, "call func");
+
+    func_msg->err = func_msg->func(func_msg);
+    sys_sem_notify(func_msg->wait_sem);
+
+    dbg_info(DBG_MSG, "func exec complete");
+}
+
 net_err_t exmsg_init(void)
 {
     // 先初始化创建一个消息队列
@@ -136,6 +192,9 @@ static void work_thread(void* arg)
                 do_netif_in(msg);
                 break;
             
+            case NET_EXMSG_FUN:
+                do_func(msg->func);
+                break;
             default:
                 break;
             }
