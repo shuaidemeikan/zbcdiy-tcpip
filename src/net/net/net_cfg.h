@@ -1,7 +1,7 @@
 #ifndef NET_CFG_H
 #define NET_CFG_H
 
-#define dbg_error   dbg_error
+#define dbg_error   dbg_ERROR
 #define dbg_warning dbg_WARNING
 
 #define DBG_MBLOCK      DBG_LEVEL_INFO
@@ -17,6 +17,7 @@
 #define DBG_ARP         DBG_LEVEL_INFO
 #define DBG_IP          DBG_LEVEL_INFO
 #define DBG_ICMPv4      DBG_LEVEL_INFO
+#define DBG_SOCKET      DBG_LEVEL_INFO
 
 #define NET_ENDIAN_LITTLE           1
 

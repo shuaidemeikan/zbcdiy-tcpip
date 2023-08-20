@@ -10,6 +10,12 @@
 #undef AF_INET
 #define AF_INET         2  
 
+#undef SOCK_RAW
+#define SOCK_RAW    0
+
+#undef IPPROTO_ICMP
+#define IPPROTP_ICMP    0
+
 struct x_in_addr
 {
     union 
@@ -28,6 +34,13 @@ struct x_in_addr
     };
 };
 
+struct x_sockaddr
+{
+    uint8_t sin_len;
+    uint8_t sin_family;
+    uint8_t sa_data[14];
+};
+
 struct x_sockaddr_in
 {
     uint8_t sin_len;
@@ -37,5 +50,6 @@ struct x_sockaddr_in
     char sin_zero[8];
 };
 
+int x_socket(int family, int type, int protocol);
 
 #endif // ! 

@@ -1,4 +1,4 @@
-#ifndef NET_API_H
+﻿#ifndef NET_API_H
 #define NET_API_H
 
 #include "tools.h"
@@ -25,5 +25,9 @@ const char* x_inet_ntop (int family, const void* addrptr, char* strptr, size_t l
 #define inet_addr(str)      x_inet_addr(str)
 #define x_inet_pton(family, strptr, addrptr)    x_inet_pton (family, strptr, addrptr)
 #define inet_ntop (family, addrptr, strptr, len)    x_inet_ntop (family, addrptr, strptr, len) 
+
+#define sockaddr_in     x_sockaddr_in
+
+#define socket(family, type, protocol)      x_socket(family, type, protocol)
 
 #endif // !

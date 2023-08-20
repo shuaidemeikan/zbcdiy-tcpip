@@ -1,7 +1,7 @@
 ﻿#include "ping.h"
 #include <WinSock2.h>
 #include "sys_plat.h"
-//#include "net_api.h"
+#include "net_api.h"
 
 uint16_t checksum (void * buf, uint16_t len) 
 {
@@ -30,7 +30,7 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
     static start_id = PING_DEFAULT_ID;
     WSADATA wsdata;
     WSAStartup(MAKEWORD(2, 2), &wsdata);
-    SOCKET s = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+    SOCKET s = x_socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
     if (s < 0)
     {
         plat_printf("ping: open socket error");
