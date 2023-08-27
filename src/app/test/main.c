@@ -283,7 +283,7 @@ int main (void) {
 	basic_test();
 
 	ping_t p;
-	//ping_run(&p, friend0_ip, 4, 64, 1000);
+	ping_run(&p, friend0_ip, 4, 64, 1000);
 
 	net_err_t test_func (struct _func_msg_t * msg);
 	int arg = 0x1234;

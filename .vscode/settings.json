@@ -67,7 +67,8 @@
         "protocol.h": "c",
         "nlocker.h": "c",
         "*.zbc": "c",
-        "net_api.h": "c"
+        "net_api.h": "c",
+        "raw.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled",
     "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools"

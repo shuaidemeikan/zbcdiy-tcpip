@@ -55,6 +55,9 @@
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\pktbuf.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\raw.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\scoket.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -136,6 +139,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\protocol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\raw.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\sock.h">

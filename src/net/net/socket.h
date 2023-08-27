@@ -1,8 +1,9 @@
-#ifndef _SOCKET_H
+﻿#ifndef _SOCKET_H
 #define _SOCKET_H
 
 #include <stdint.h>
 #include "ipv4.h"
+#include "sock.h"
 
 #undef INADDR_ANY
 #define INADDR_ANY              (uint32_t)0x00000000
@@ -15,7 +16,14 @@
 
 #undef IPPROTO_ICMP
 #define IPPROTP_ICMP    0
-
+/*
+    目前协议栈内的ip地址有以下几种:
+    1、x_in_addr:承载的是一个ipv4的地址，使用addr_array[]可依次访问每个段，使用s_addr可一次性拿出所有位数
+    2、x_sockaddr_in:x_sockaddr的ipv4特殊实现，封装了x_in_addr类型，加上了长度，协议，端口和填充字段，使用起来更为直接
+    3、x_sockaddr:x_sockaddr_in的原始实现，将端口和填充字段结合为一个字段，这个字段并不一定填端口，更为灵活
+    4、uint32:单纯的32位地址，其中每8位保存了一个段
+    5、char*:单纯的字符串类型地址
+*/
 struct x_in_addr
 {
     union 
@@ -47,9 +55,9 @@ struct x_sockaddr_in
     uint8_t sin_family;
     uint8_t sin_port;
     struct x_in_addr sin_addr;
-    char sin_zero[8];
+    char sin_zero[8];               // 填充字段，一般全为0
 };
 
 int x_socket(int family, int type, int protocol);
-
-#endif // ! 
+ssize_t x_sendto(int s, const void* buf, size_t len, int flags, const struct x_sockaddr* dest, x_socklen_t dest_len);
+#endif 

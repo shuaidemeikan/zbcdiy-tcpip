@@ -27,32 +27,36 @@ uint16_t checksum (void * buf, uint16_t len)
 
 void ping_run (ping_t* ping, const char* dest, int count, int size, int interval)
 {
-    static start_id = PING_DEFAULT_ID;
-    WSADATA wsdata;
+    static start_id = PING_DEFAULT_ID;                          // 给ping包加入一个id
+    // windows套接字编程初始化
+    WSADATA wsdata;                                             
     WSAStartup(MAKEWORD(2, 2), &wsdata);
-    SOCKET s = x_socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+    int s = x_socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);       // 获得一个套接字
     if (s < 0)
     {
         plat_printf("ping: open socket error");
         return;
     }
 
-    int tmo = 3000;
-    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tmo, sizeof(tmo));
+    int tmo = 3000;                                             // 设置套接字收包的超时时间
+    //setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tmo, sizeof(tmo));     // 设置套接字属性
 
+    // 拿到并设置一个ipv4地址结构
     struct sockaddr_in addr;
     plat_memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = inet_addr(dest);
     addr.sin_port = 0;
 
-    connect(s, (const struct sockaddr*)&addr, sizeof(addr));
+    //connect(s, (const struct sockaddr*)&addr, sizeof(addr));
 
-    int fill_size = size > PING_BUFFER_SIZE ? PING_BUFFER_SIZE : size;
+    int fill_size = size > PING_BUFFER_SIZE ? PING_BUFFER_SIZE : size;      // 设置ip包载荷最大大小
+    // 填充载荷
     for (int i = 0; i < fill_size; i++)
         ping->req.buf[i] = i;
 
-    int total_size = sizeof(icmp_hdr_t) + fill_size;
+    int total_size = sizeof(icmp_hdr_t) + fill_size;        // 获得ip包整体大小(包头+载荷)
+    // 填充ip包的数据结构
     for (int i = 0, seq = 0; i < count; i++, seq++)
     {
         ping->req.echo_hdr.type = 8;
@@ -62,8 +66,9 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
         ping->req.echo_hdr.seq = seq;
         ping->req.echo_hdr.checksum16 = checksum(&ping->req, total_size);
 
-        //int size = sendto(s, (const char*)&ping->req, total_size, 0, (const struct sockaddr*)&addr, sizeof(addr));
-        int size = send(s, (const char*)&ping->req, total_size, 0);
+        int size = sendto(s, (const char*)&ping->req, total_size, 0, (const struct sockaddr*)&addr, sizeof(addr));
+        //int size = send(s, (const char*)&ping->req, total_size, 0);     // 把包发出去
+        // 上面的函数会返回发出去包的大小，如果大小小于0，说明发送失败了
         if (size < 0)
         {
             plat_printf("send pig request failed.");
@@ -79,6 +84,7 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
             //struct sockaddr_in from_addr;
             int addr_len = sizeof(addr);
             //size = recvfrom(s, (char*)&ping->reply, sizeof(ping->reply), 0, (struct sockaddr*)&from_addr, &addr_len);
+            // 接收回包，这一块具体是怎么处理的还不是很清楚，也许没有回包就会阻塞在这里，也许不会...
             size = recv(s, (char*)&ping->reply, sizeof(ping->reply), 0);
             if (size < 0)
             {

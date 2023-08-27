@@ -18,6 +18,7 @@
 #define DBG_IP          DBG_LEVEL_INFO
 #define DBG_ICMPv4      DBG_LEVEL_INFO
 #define DBG_SOCKET      DBG_LEVEL_INFO
+#define DBG_RAW         DBG_LEVEL_INFO
 
 #define NET_ENDIAN_LITTLE           1
 
