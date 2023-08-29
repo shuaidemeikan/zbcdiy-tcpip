@@ -1,4 +1,4 @@
-#include "sock.h"
+﻿#include "sock.h"
 #include "sys.h"
 #include "exmsg.h"
 #include "debug.h"
@@ -8,12 +8,21 @@
 #define SOCKET_MAX_NR   10
 static x_socket_t socket_tbl[SOCKET_MAX_NR];
 
-
+/**
+ * 从一个socket结构拿到该socket的编号
+ * @param socket socket结构
+ * @return 该socket的编号
+ */
 static int get_index (x_socket_t* socket)
 {
     return (int)(socket - socket_tbl);
 }
 
+/**
+ * 从一个编号拿到一个socket结构
+ * @param index 编号
+ * @return 编号对应的socket
+ */
 static x_socket_t* get_socket (int index)
 {
     if ((index < 0) || (index >= SOCKET_MAX_NR))
@@ -23,6 +32,10 @@ static x_socket_t* get_socket (int index)
     return socket_tbl + index;
 }
 
+/**
+ * 从socket池内拿到一个socket
+ * @return 拿到的socket结构，如果socket池内没有空闲的结构，就会返回0
+ */
 static x_socket_t* socket_alloc (void)
 {
     x_socket_t* s = (x_socket_t*)0;
@@ -39,19 +52,33 @@ static x_socket_t* socket_alloc (void)
     return s;
 }
 
+/**
+ * 释放一个socket结构
+ * @param s 待释放的socket
+ */
 static void socket_free (x_socket_t* s)
 {
     s->state = SOCKET_STATE_FREE;
 }
 
+/**
+ * 初始化socket模块
+ * @return 初始化是否成功
+ */
 net_err_t socket_init (void)
 {
     plat_memset(socket_tbl, 0, sizeof(socket_tbl));
     return NET_ERR_OK;
 }
 
+/**
+ * 创建一个socket结构，该函数由socket.c文件通知工作线程调用
+ * @param msg 
+ * @return 创建是否成功
+ */
 net_err_t socket_create_req_in (struct _func_msg_t* msg)
 {
+    // 这里定义了一个提供创建不同类型socket的不同方法的数组
     static const struct sock_info_t
     {
         int protocol;
@@ -60,9 +87,11 @@ net_err_t socket_create_req_in (struct _func_msg_t* msg)
         [SOCK_RAW] = {.protocol = IPPROTP_ICMP, .create = raw_create,}
     };
 
+    // 解析一下参数
     sock_req_t* req = (sock_req_t*)msg->param;
     socket_create_t* param = &req->create;
 
+    // 获得一个socket
     x_socket_t* s = socket_alloc();
     if (!s)
     {
@@ -70,6 +99,7 @@ net_err_t socket_create_req_in (struct _func_msg_t* msg)
         return NET_ERR_MEM;
     }
 
+    // 检查参数有效性
     if ((param->type < 0) || (param->type >= sizeof(socket_tbl) / sizeof(socket_tbl[0])))
     {
         dbg_ERROR(DBG_SOCKET, "create sock failed");
@@ -77,13 +107,25 @@ net_err_t socket_create_req_in (struct _func_msg_t* msg)
         return NET_ERR_PARAM;
     }
 
-    const struct sock_info_t* info = socket_tbl + param->type;
-    sock_t* sock = info->create;
+    // 从上面定义的数组里取出来对应的当前要创建的socket类型的创建函数
+    const struct sock_info_t* info = sock_tbl + param->type;
+    if (param->protocol == 0)
+        param->protocol = info->protocol;
 
+    sock_t* sock = info->create(param->family, param->protocol);
+    if (!sock)
+    {
+        dbg_error(DBG_SOCKET, "create sock failed");
+        socket_free(s);
+        return NET_ERR_MEM;
+    }
+
+    s->sock = sock;
     req->sockfd = get_index(s);
     return NET_ERR_OK;
 }
 
+// 初始化一个sock(注意，不是socket)
 net_err_t sock_init(sock_t* sock, int family, int protocol, const sock_opt_t* ops)
 {
     sock->protocol = protocol;
