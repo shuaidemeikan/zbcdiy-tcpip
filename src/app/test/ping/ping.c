@@ -31,7 +31,7 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
     // windows套接字编程初始化
     WSADATA wsdata;                                             
     WSAStartup(MAKEWORD(2, 2), &wsdata);
-    int s = x_socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);       // 获得一个套接字
+    int s = x_socket(AF_INET, SOCK_RAW, IPPROTP_ICMP);       // 获得一个套接字
     if (s < 0)
     {
         plat_printf("ping: open socket error");

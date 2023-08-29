@@ -11,6 +11,9 @@
 #include "debug.h"
 #include "mblock.h"
 #include "sock.h"
+#include "pktbuf.h"
+#include "ipv4.h"
+#include "socket.h"
 
 #define RAW_MAX_NR      10
 
@@ -29,6 +32,67 @@ net_err_t raw_init (void)
 }
 
 /**
+ * raw类型的socket的发送函数
+ * @param s sock
+ * @param buf 待发送的内容
+ * @param len 待发送的长度
+ * @param flags 待发送的flags，其实用不到
+ * @param dest 目标地址
+ * @param dest_len 目标地址长度
+ * @param result_len 具体发送了多少个字节
+ * @return net_err_t类型
+ */
+static net_err_t raw_sendto (struct _sock_t* s, const void* buf, size_t len, int flags, const struct x_sockaddr* dest, x_socklen_t dest_len, ssize_t * result_len)
+{
+    // 目标地址不能为空
+    if (!ipaddr_is_any(&s->remote_ip))
+    {
+        dbg_error(DBG_RAW, "dest is incorrect");
+        return NET_ERR_PARAM;
+    }
+    // 最终我们调用ipv4_out函数发送，所以地址需要ipaddrt类型
+    ipaddr_t dest_ip;
+    struct x_sockaddr_in* addr = (struct x_sockaddr_in*)dest;
+    ipaddr_from_buf(&dest_ip, addr->sin_addr.addr_array);
+    // sock内部的目标地址要和实际发送的地址一致
+    if (!ipaddr_is_equal(&s->remote_ip, &dest_ip))
+    {
+        dbg_error(DBG_RAW, "dest is incorrect");
+        return NET_ERR_PARAM;
+    }
+
+    // 发送
+    pktbuf_t* pktbuf = pktbuf_alloc((int)len);
+    if (!pktbuf)
+    {
+        dbg_error(DBG_SOCKET, "no buffer");
+        return NET_ERR_MEM;
+    }
+
+    net_err_t err = pktbuf_write(pktbuf, (uint8_t*)buf, (int)len);
+    if (err < 0)
+    {
+        dbg_error(DBG_RAW, "write pktbuf failed");
+        goto end_send_to;
+    }
+
+    err = ipv4_out(s->protocol, &dest_ip, &netif_get_default()->ipaddr, pktbuf);
+    if (err < 0)
+    {
+        dbg_error(DBG_RAW, "sendto failed");
+        goto end_send_to;
+    }
+
+    // 记得修改一下具体发送了多少字节的值
+    *result_len = (ssize_t)len;
+    return NET_ERR_OK;
+
+end_send_to:
+    pktbuf_free(pktbuf);
+    return err;
+}
+
+/**
  * 创建一个raw结构
  * @param str 字符串类型的地址
  * @return 转换成的32位数据
@@ -37,7 +101,7 @@ sock_t* raw_create (int family, int protocol)
 {
     // 创建用于raw操作的函数
     static const sock_opt_t raw_ops = {
-        .sendto = raw_create,
+        .sendto = raw_sendto,
     };
 
     // 申请一个rwa
@@ -59,3 +123,4 @@ sock_t* raw_create (int family, int protocol)
     nlist_insert_last(&raw_list, &raw->base.node);
     return (sock_t*)raw;
 }
+

@@ -11,6 +11,16 @@ void ipaddr_set_any(ipaddr_t* ip)
 }
 
 /**
+ * 判断一个地址是否为空
+ * @param ip 
+ * @return 是否为空
+ */
+int ipaddr_is_any (const ipaddr_t* ip)
+{
+    return ip->q_addr == 0;
+}
+
+/**
  * 把字符串类型的ip存到ipaddr结构里
  * @param dest 被存的ipaddr结构
  * @param str 字符串类型的ip

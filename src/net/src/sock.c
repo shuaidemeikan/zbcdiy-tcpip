@@ -142,7 +142,31 @@ net_err_t sock_init(sock_t* sock, int family, int protocol, const sock_opt_t* op
     return NET_ERR_OK;
 }
 
+/**
+ * 工作线程实际上调用的socket接口的发送函数
+ * @param msg 发送函数需要的参数
+ * @return err类型的返回值
+ */
 net_err_t socket_sendto_req_in (struct _func_msg_t* msg)
 {
-    return NET_ERR_OK;
+    // 取出参数
+    sock_req_t* req = (sock_req_t*)msg->param;
+    x_socket_t* s = get_socket(req->sockfd);
+    if (!s)
+    {
+        dbg_error(DBG_SOCKET, "param error");
+        return NET_ERR_PARAM;
+    }
+    sock_t* sock = s->sock;
+    sock_data_t* data = &req->data;
+
+    if (!sock->ops->sendto)
+    {
+        dbg_error(DBG_SOCKET, "funtion not imp");
+        return NET_ERR_NOT_SUPPORT;
+    }
+
+    // 调对应socket类型的发送函数
+    net_err_t err = sock->ops->sendto(sock, data->buf, data->len, data->flags, data->addr, data->addrlen, &data->comp_len);
+    return err;
 }

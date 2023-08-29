@@ -50,8 +50,8 @@ ssize_t x_sendto(int s, const void* buf, size_t len, int flags, const struct x_s
         dbg_error(DBG_SOCKET, "sendto failed, dest or dest_len is error.");
         return -1;
     }
-    ssize_t send_size = 0;
-    uint8_t* start = (uint8_t*)buf;
+    ssize_t send_size = 0;                  // 用来统计总共发送了多少
+    uint8_t* start = (uint8_t*)buf;         // 发送的地址
     while (len > 0)
     {
         sock_req_t req;

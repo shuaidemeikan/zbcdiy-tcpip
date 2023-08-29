@@ -15,7 +15,7 @@
 #define SOCK_RAW    0
 
 #undef IPPROTO_ICMP
-#define IPPROTP_ICMP    0
+#define IPPROTP_ICMP    1
 /*
     目前协议栈内的ip地址有以下几种:
     1、x_in_addr:承载的是一个ipv4的地址，使用addr_array[]可依次访问每个段，使用s_addr可一次性拿出所有位数
