@@ -1,6 +1,7 @@
 ﻿#include "icmpv4.h"
 #include "debug.h"
 #include "protocol.h"
+#include "raw.h"
 
 net_err_t icmpv4_init (void)
 {
@@ -85,15 +86,11 @@ net_err_t icmpv4_in (ipaddr_t* src_ip, ipaddr_t* netif_ip, pktbuf_t* buf)
 
     ip_pkt = (ipv4_pkt_t*)pktbuf_data(buf);
 
-    err = pktbuf_remove_header(buf, iphdr_size);
-    if (err < 0)
-    {
-        dbg_ERROR(DBG_IP, "remove ip header failed.");
-        return NET_ERR_SIZE;
-    }
-    pktbuf_reset_acc(buf);
+    
 
-    icmpv4_pkt_t* icmp_pkt = (icmpv4_pkt_t*)pktbuf_data(buf);
+    icmpv4_pkt_t* icmp_pkt = (icmpv4_pkt_t*)(pktbuf_data(buf) + iphdr_size);
+
+    pktbuf_seek(buf, iphdr_size);
 
     if (err = is_pkt_ok(icmp_pkt, buf->total_size, buf) < 0)
     {
@@ -105,12 +102,25 @@ net_err_t icmpv4_in (ipaddr_t* src_ip, ipaddr_t* netif_ip, pktbuf_t* buf)
     {
     case ICMPv4_ECHO_REQUEST:
     {
+        err = pktbuf_remove_header(buf, iphdr_size);
+        if (err < 0)
+        {
+            dbg_ERROR(DBG_IP, "remove ip header failed.");
+            return NET_ERR_SIZE;
+        }
+        pktbuf_reset_acc(buf);
+
         return icmpv4_echo_reply(src_ip, netif_ip, buf);
     }
     
     default:
     {   
-        pktbuf_free(buf);
+        err = raw_in(buf);
+        if (err < 0)
+        {
+            dbg_error(DBG_ICMPv4, "raw in failed");
+            return err;
+        }
         return NET_ERR_OK;
     }
     }

@@ -38,8 +38,13 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
         return;
     }
 
-    int tmo = 3000;                                             // 设置套接字收包的超时时间
+    //int tmo = 3000;                                             // 设置套接字收包的超时时间
     //setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tmo, sizeof(tmo));     // 设置套接字属性
+
+    struct timeval tmo;
+    tmo.tv_sec = 0;
+    tmo.tv_usec = 0;
+    setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tmo, sizeof(tmo));
 
     // 拿到并设置一个ipv4地址结构
     struct sockaddr_in addr;
@@ -81,11 +86,11 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
 
         do
         {
-            //struct sockaddr_in from_addr;
+            struct sockaddr_in from_addr;
             int addr_len = sizeof(addr);
-            //size = recvfrom(s, (char*)&ping->reply, sizeof(ping->reply), 0, (struct sockaddr*)&from_addr, &addr_len);
-            // 接收回包，这一块具体是怎么处理的还不是很清楚，也许没有回包就会阻塞在这里，也许不会...
-            size = recv(s, (char*)&ping->reply, sizeof(ping->reply), 0);
+            size = recvfrom(s, (char*)&ping->reply, sizeof(ping->reply), 0, (struct sockaddr*)&from_addr, &addr_len);
+            // 接收回包
+            //size = recv(s, (char*)&ping->reply, sizeof(ping->reply), 0);
             if (size < 0)
             {
                 plat_printf("ping recv tmo\n");

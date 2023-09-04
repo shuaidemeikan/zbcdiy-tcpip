@@ -8,6 +8,65 @@
 #define SOCKET_MAX_NR   10
 static x_socket_t socket_tbl[SOCKET_MAX_NR];
 
+net_err_t sock_wait_init (sock_wait_t* wait)
+{
+    wait->waitting = 0;
+    wait->err = NET_ERR_OK;
+    wait->sem = sys_sem_create(0);
+    return wait->sem == SYS_SEM_INVALID ? NET_ERR_SYS : NET_ERR_OK;
+}
+
+void sock_wait_destory (sock_wait_t* wait)
+{
+    if (wait->sem != SYS_SEM_INVALID)
+        sys_sem_free(wait->sem);
+}
+void sock_wait_add (sock_wait_t* wait, int tmo, struct _sock_req_t* req)
+{
+    wait->waitting++;
+    req->wait = wait;
+    req->wait_tmo = tmo;
+}
+
+net_err_t sock_wait_enter (sock_wait_t* wait, int tmo)
+{
+    // 等待tmo这么长时间，如果小于0，就说明等待超时了
+    if (sys_sem_wait(wait->sem, tmo) < 0)
+        return NET_ERR_TMO;
+
+    return wait->err;
+}
+
+void sock_wait_leave (sock_wait_t* wait, net_err_t err)
+{
+    if (wait->waitting > 0)
+    {
+        wait->waitting--;
+        sys_sem_notify(wait->sem);
+        wait->err = err;
+    }
+}
+
+void sock_wakeup (sock_t* sock, int type, int err)
+{
+    if (type & SOCK_WAIT_CONN)
+        sock_wait_leave(sock->conn_wait, err);
+    if (type & SOCK_WAIT_WRITE)
+        sock_wait_leave(sock->send_wait, err);
+    if (type & SOCK_WAIT_READ)
+        sock_wait_leave(sock->recv_wait, err);
+}
+
+void sock_uninit(sock_t* sock)
+{
+    if(sock->recv_wait)
+        sock_wait_destory(sock->recv_wait);
+    if(sock->conn_wait)
+        sock_wait_destory(sock->conn_wait);
+    if(sock->send_wait)
+        sock_wait_destory(sock->send_wait);
+}
+
 /**
  * 从一个socket结构拿到该socket的编号
  * @param socket socket结构
@@ -71,12 +130,52 @@ net_err_t socket_init (void)
     return NET_ERR_OK;
 }
 
+net_err_t sock_setopt (struct _sock_t* s, int level, int optname, const char* optval, int len)
+{
+    if (level != SOL_SOCKET)
+    {
+        dbg_ERROR(DBG_SOCKET, "unknown level");
+        return NET_ERR_PARAM;
+    }
+
+    switch (optname)
+    {
+        case SO_RCVTIMEO:
+        case SO_SNDTIMEO:
+        {
+            if (len != sizeof(struct x_timeval))
+            {
+                dbg_error(DBG_SOCKET, "time size error");
+                return NET_ERR_PARAM;
+            }
+
+            struct x_timeval* tv = (struct x_timeval*)optval;
+            int time_ms = tv->tv_sec * 1000 + tv->tv_usec / 1000;
+            if (optname == SO_RCVTIMEO)
+            {
+                s->recv_tmo = time_ms;
+                return NET_ERR_OK;
+            }else if (optname == SO_SNDTIMEO)
+            {
+                s->send_tmo = time_ms;
+                return NET_ERR_OK;
+            }else
+                return NET_ERR_PARAM;
+            break;
+        }
+        default:
+            break;
+    }
+
+    return NET_ERR_PARAM;
+}
+
 /**
  * 创建一个socket结构，该函数由socket.c文件通知工作线程调用
  * @param msg 
  * @return 创建是否成功
  */
-net_err_t socket_create_req_in (struct _func_msg_t* msg)
+net_err_t sock_create_req_in (struct _func_msg_t* msg)
 {
     // 这里定义了一个提供创建不同类型socket的不同方法的数组
     static const struct sock_info_t
@@ -126,7 +225,7 @@ net_err_t socket_create_req_in (struct _func_msg_t* msg)
 }
 
 // 初始化一个sock(注意，不是socket)
-net_err_t sock_init(sock_t* sock, int family, int protocol, const sock_opt_t* ops)
+net_err_t sock_init(sock_t* sock, int family, int protocol, const sock_ops_t* ops)
 {
     sock->protocol = protocol;
     sock->family = family;
@@ -139,6 +238,9 @@ net_err_t sock_init(sock_t* sock, int family, int protocol, const sock_opt_t* op
     sock->recv_tmo = 0;
     sock->send_tmo = 0;
     nlist_node_init(&sock->node);
+    sock->recv_wait = (sock_wait_t*)0;
+    sock->send_wait = (sock_wait_t*)0;
+    sock->conn_wait = (sock_wait_t*)0;
     return NET_ERR_OK;
 }
 
@@ -147,7 +249,7 @@ net_err_t sock_init(sock_t* sock, int family, int protocol, const sock_opt_t* op
  * @param msg 发送函数需要的参数
  * @return err类型的返回值
  */
-net_err_t socket_sendto_req_in (struct _func_msg_t* msg)
+net_err_t sock_sendto_req_in (struct _func_msg_t* msg)
 {
     // 取出参数
     sock_req_t* req = (sock_req_t*)msg->param;
@@ -167,6 +269,60 @@ net_err_t socket_sendto_req_in (struct _func_msg_t* msg)
     }
 
     // 调对应socket类型的发送函数
-    net_err_t err = sock->ops->sendto(sock, data->buf, data->len, data->flags, data->addr, data->addrlen, &data->comp_len);
+    net_err_t err = sock->ops->sendto(sock, data->buf, data->len, data->flags, data->addr, *data->addrlen, &data->comp_len);
+    
+    if (err == NET_ERR_NEED_WAIT)
+    {
+        if (sock->send_wait)
+            sock_wait_add(sock->send_wait, sock->send_tmo, req);
+    }
+    
     return err;
+}
+
+net_err_t sock_recvfrom_req_in (struct _func_msg_t* msg)
+{
+    // 取出参数
+    sock_req_t* req = (sock_req_t*)msg->param;
+    x_socket_t* s = get_socket(req->sockfd);
+    if (!s)
+    {
+        dbg_error(DBG_SOCKET, "param error");
+        return NET_ERR_PARAM;
+    }
+    sock_t* sock = s->sock;
+    sock_data_t* data = &req->data;
+
+    if (!sock->ops->recvfrom)
+    {
+        dbg_error(DBG_SOCKET, "funtion not imp");
+        return NET_ERR_NOT_SUPPORT;
+    }
+
+    // 调对应socket类型的发送函数
+    net_err_t err = sock->ops->recvfrom(sock, data->buf, data->len, data->flags, data->addr, *data->addrlen, &data->comp_len);
+    
+    if (err == NET_ERR_NEED_WAIT)
+    {
+        if (sock->recv_wait)
+            sock_wait_add(sock->recv_wait, sock->recv_tmo, req);
+    }
+    return err;
+}
+
+net_err_t sock_setsockopt_req_in (struct _func_msg_t* msg)
+{
+    // 取出参数
+    sock_req_t* req = (sock_req_t*)msg->param;
+    x_socket_t* s = get_socket(req->sockfd);
+    if (!s)
+    {
+        dbg_error(DBG_SOCKET, "param error");
+        return NET_ERR_PARAM;
+    }
+    sock_t* sock = s->sock;
+    sock_opt_t* opt = &req->opt;
+
+    return sock->ops->setopt(sock, opt->level, opt->optname, opt->optval, opt->len);
+    return NET_ERR_OK;
 }

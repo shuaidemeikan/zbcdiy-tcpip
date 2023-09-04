@@ -5,6 +5,7 @@
 #include "icmpv4.h"
 #include "mblock.h"
 #include "timer.h"
+#include "raw.h"
 
 static uint16_t packet_id = 0;
 
@@ -427,7 +428,12 @@ net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t
     case NET_PROTOCOL_TCP:
         break;
     default:
-        dbg_WARNING(DBG_IP, "unknown protocol");
+        net_err_t err = raw_in(buf);
+        if (err < 0)
+        {
+            dbg_error(DBG_IP, "raw in failed!");
+            return err;
+        }
         break;
     }
 

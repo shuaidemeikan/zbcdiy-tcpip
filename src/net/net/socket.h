@@ -16,6 +16,15 @@
 
 #undef IPPROTO_ICMP
 #define IPPROTP_ICMP    1
+
+#undef SOL_SOCKET
+#define SOL_SOCKET      0
+
+#undef SO_RCVTIMEO
+#define SO_RCVTIMEO     1
+#undef SO_SNDTIMEO
+#define SO_SNDTIMEO     2
+
 /*
     目前协议栈内的ip地址有以下几种:
     1、x_in_addr:承载的是一个ipv4的地址，使用addr_array[]可依次访问每个段，使用s_addr可一次性拿出所有位数
@@ -58,6 +67,14 @@ struct x_sockaddr_in
     char sin_zero[8];               // 填充字段，一般全为0
 };
 
+struct x_timeval
+{
+    int tv_sec;
+    int tv_usec;
+};
+
 int x_socket(int family, int type, int protocol);
 ssize_t x_sendto(int s, const void* buf, size_t len, int flags, const struct x_sockaddr* dest, x_socklen_t dest_len);
+ssize_t x_recvfrom(int s, void* buf, size_t len, int flags, const struct x_sockaddr* src, x_socklen_t* src_len);
+int x_setsockopt(int s, int level, int optname, const char* optval, int len);
 #endif 

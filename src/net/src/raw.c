@@ -31,6 +31,26 @@ net_err_t raw_init (void)
     return NET_ERR_OK;
 }
 
+static raw_t* sock_find (ipaddr_t* src, ipaddr_t* dest, int protocol)
+{
+    nlist_node_t* node;
+    nlist_for_each(node, &raw_list)
+    {
+        raw_t* raw = (raw_t*)nlist_entry(node, sock_t, node);
+
+        if (raw->base.protocol && (raw->base.protocol != protocol))
+            continue;
+        if (!ipaddr_is_any(&raw->base.local_ip) && !ipaddr_is_equal(&raw->base.local_ip, src))
+            continue;
+        if (!ipaddr_is_any(&raw->base.remote_ip) && !ipaddr_is_equal(&raw->base.remote_ip, dest))
+            continue;
+        
+        return raw;
+    }
+
+    return (raw_t*)0;
+}
+
 /**
  * raw类型的socket的发送函数
  * @param s sock
@@ -44,18 +64,13 @@ net_err_t raw_init (void)
  */
 static net_err_t raw_sendto (struct _sock_t* s, const void* buf, size_t len, int flags, const struct x_sockaddr* dest, x_socklen_t dest_len, ssize_t * result_len)
 {
-    // 目标地址不能为空
-    if (!ipaddr_is_any(&s->remote_ip))
-    {
-        dbg_error(DBG_RAW, "dest is incorrect");
-        return NET_ERR_PARAM;
-    }
     // 最终我们调用ipv4_out函数发送，所以地址需要ipaddrt类型
     ipaddr_t dest_ip;
     struct x_sockaddr_in* addr = (struct x_sockaddr_in*)dest;
     ipaddr_from_buf(&dest_ip, addr->sin_addr.addr_array);
-    // sock内部的目标地址要和实际发送的地址一致
-    if (!ipaddr_is_equal(&s->remote_ip, &dest_ip))
+
+    // s内部的目标地址为空或者sock内部的目标地址要和实际发送的地址一致起码满足一条
+    if (!ipaddr_is_any(&s->remote_ip) && !ipaddr_is_equal(&s->remote_ip, &dest_ip))
     {
         dbg_error(DBG_RAW, "dest is incorrect");
         return NET_ERR_PARAM;
@@ -92,6 +107,41 @@ end_send_to:
     return err;
 }
 
+static net_err_t raw_recvfrom (struct _sock_t* s, void* buf, size_t len, int flags, const struct x_sockaddr* dest, x_socklen_t dest_len, ssize_t * result_len)
+{
+    raw_t* raw = (raw_t*)s;
+
+    nlist_node_t * first = nlist_remove_first(&raw->recv_list);
+    if (!first)
+    {
+        dbg_error(DBG_RAW, "no packet");
+        return NET_ERR_NEED_WAIT;
+    }
+
+    pktbuf_t* pktbuf = nlist_entry(first, pktbuf_t, node);
+    ipv4_hdr_t* iphdr = (ipv4_hdr_t*)pktbuf_data(pktbuf);
+
+    struct x_sockaddr_in* addr = (struct x_sockaddr_in*)dest;
+    plat_memset(addr, 0, sizeof(struct x_sockaddr_in));
+    addr->sin_family = AF_INET;
+    addr->sin_port = 0;
+    plat_memcpy(&addr->sin_addr, &iphdr->src_ip, IPV4_ADDR_SIZE);
+
+    int size = (pktbuf->total_size > (int)len ? len : pktbuf->total_size);
+    pktbuf_reset_acc(pktbuf);
+
+    net_err_t err = pktbuf_read(pktbuf, buf, size);
+    if(err < 0)
+    {
+        dbg_error(DBG_RAW, "read failed");
+        return err;
+    }
+
+    pktbuf_free(pktbuf);
+    *result_len = size;
+    return NET_ERR_NEED_WAIT;
+}
+
 /**
  * 创建一个raw结构
  * @param str 字符串类型的地址
@@ -100,8 +150,9 @@ end_send_to:
 sock_t* raw_create (int family, int protocol)
 {
     // 创建用于raw操作的函数
-    static const sock_opt_t raw_ops = {
+    static const sock_ops_t raw_ops = {
         .sendto = raw_sendto,
+        .recvfrom = raw_recvfrom,
     };
 
     // 申请一个rwa
@@ -120,7 +171,46 @@ sock_t* raw_create (int family, int protocol)
         mblock_free(&raw_mblock, raw);
         return (sock_t*)0;
     }
+
+    nlist_init(&raw->recv_list);
+    ((sock_t*)raw)->recv_wait = &raw->recv_wait;
+    if (sock_wait_init(raw->base.recv_wait) < 0)
+    {
+        dbg_error(DBG_RAW, "create raw recv wait failed");
+        goto create_failed;
+    }
+
     nlist_insert_last(&raw_list, &raw->base.node);
     return (sock_t*)raw;
+
+create_failed:
+    sock_uninit(&raw->base);
+    return (sock_t*)0;
 }
 
+net_err_t raw_in (pktbuf_t* buf)
+{
+    ipv4_hdr_t* iphdr = (ipv4_hdr_t*)pktbuf_data(buf);
+    
+    ipaddr_t src, dest;
+    ipaddr_from_buf(&src, iphdr->src_ip);
+    ipaddr_from_buf(&dest, iphdr->dest_ip);
+
+    raw_t* raw = (raw_t*)sock_find(&src, &dest, iphdr->protocol);
+    if (!raw)
+    {
+        dbg_warning(DBG_RAW, "no raw for this packet");
+        return NET_ERR_UNREACH;
+    }
+
+    if (nlist_count(&raw->recv_list) < RAW_MAX_RECV)
+    {
+        nlist_insert_first(&raw->recv_list, &buf->node);
+
+        sock_wakeup((sock_t*)raw, SOCK_WAIT_READ, NET_ERR_OK);
+    }else
+        pktbuf_free(buf);
+
+    return NET_ERR_OK;
+    
+}
