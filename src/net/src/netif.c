@@ -5,6 +5,7 @@
 #include "exmsg.h"
 #include "ether.h"
 #include "protocol.h"
+#include "ipv4.h"
 
 // 存储网卡结构体实际的内存
 static netif_t netif_buffer[NETIF_DEV_CNT];
@@ -270,6 +271,14 @@ net_err_t netif_set_active (netif_t * netif)
     if (!netif_default && netif->type != NETIF_TYPE_LOOP)
         netif_set_default(netif);
 
+    // 添加对应网卡的路由
+    ipaddr_t ip;
+    uint32_t ip_buf = get_network(&netif->ipaddr, &netif->netmask);
+    ipaddr_from_buf(&ip, (uint8_t*)(&ip_buf));
+    //rt_add(&netif->ipaddr, &netif->netmask, ipaddr_get_any(), netif);
+    rt_add(&ip, &netif->netmask, ipaddr_get_any(), netif);
+    ipaddr_from_str(&ip, bro_addr);
+    rt_add(&netif->ipaddr, &ip, ipaddr_get_any(), netif);
     netif->state = NETIF_ACTIVE;
     display_netif_list();
     return NET_ERR_OK;
@@ -301,7 +310,19 @@ net_err_t netif_set_deactive (netif_t * netif)
 
     // 设置默认网卡
     if (netif_default == netif)
+    {
         netif_default = (netif_t*)0;
+        rt_remove(ipaddr_get_any(), ipaddr_get_any());
+    }
+        
+
+    ipaddr_t ip;
+    uint32_t ip_buf = get_network(&netif->ipaddr, &netif->netmask);
+    ipaddr_from_buf(&ip, (uint8_t*)(&ip_buf));
+    //rt_add(&netif->ipaddr, &netif->netmask, ipaddr_get_any(), netif);
+    rt_remove(&ip, &netif->netmask);
+    ipaddr_from_str(&ip, bro_addr);
+    rt_remove(&netif->ipaddr, &ip);
 
     netif->state = NETIF_OPENED;
     display_netif_list();
@@ -335,6 +356,12 @@ net_err_t netif_close (netif_t* netif)
 void netif_set_default (netif_t* netif)
 {
     netif_default = netif;
+    if (!(ipaddr_is_any(&netif->gateway)))
+    {
+        if (netif_default)
+            rt_remove(ipaddr_get_any(), ipaddr_get_any());
+        rt_add(ipaddr_get_any(), ipaddr_get_any(), &netif->gateway, netif_default);
+    }
 }
 
 // 以下四个函数都是往网卡内部的消息队列写数据

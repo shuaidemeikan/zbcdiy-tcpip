@@ -32,4 +32,6 @@ void ipaddr_from_buf (ipaddr_t* dest, uint8_t* ip_buf);
 int ipaddr_is_local_broadcast (const ipaddr_t* ipaddr);
 int ipaddr_is_direct_broadcast (const ipaddr_t* ipaddr, const ipaddr_t* netmask, const ipaddr_t* targetip);
 int ipaddr_is_match(const ipaddr_t* ipaddr, const ipaddr_t* netmask, const ipaddr_t* targetip);
+uint32_t get_network (const ipaddr_t* ipaddr, const ipaddr_t* netmask);
+int ipaddr_1_cnt (ipaddr_t* ip);
 #endif

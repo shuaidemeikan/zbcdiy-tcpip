@@ -75,6 +75,21 @@ typedef struct _ip_frag_t
     nlist_node_t node;
 }ip_frag_t;
 
+typedef struct _rentry_t
+{
+    ipaddr_t net;               // 网络号
+    ipaddr_t mask;              // 掩码
+    ipaddr_t next_hop;          // 下一跳地址
+    netif_t* netif;             // 下一跳接口
+    int mask_1_cnt;             // 位数
+
+    nlist_node_t node;
+}rentry_t;
+void rt_init (void);
+void rt_add (ipaddr_t* net, ipaddr_t* mask, ipaddr_t* next_hop, netif_t* netif);
+void rt_remove (ipaddr_t* net, ipaddr_t* mask);
+rentry_t* rt_find (ipaddr_t* ip);
+
 net_err_t ipv4_init (void);
 net_err_t ipv4_in (netif_t* netif, pktbuf_t* buf);
 net_err_t ipv4_out(uint8_t protocol, ipaddr_t* dest, ipaddr_t* src, pktbuf_t* buf);

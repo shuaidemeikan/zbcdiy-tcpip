@@ -16,6 +16,7 @@
 net_err_t net_init(void)
 {
     dbg_info(DBG_INIT, "init net");
+    rt_init();
     netif_init();
     net_plat_init();
     exmsg_init();

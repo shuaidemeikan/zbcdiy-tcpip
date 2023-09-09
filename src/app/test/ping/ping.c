@@ -126,5 +126,9 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
         sys_sleep(interval);
 
     }
-    closesocket(s);
+
+    close(s);
+
+    //closesocket(s);
 }
+

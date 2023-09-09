@@ -4,21 +4,21 @@
 #define dbg_error   dbg_ERROR
 #define dbg_warning dbg_WARNING
 
-#define DBG_MBLOCK      DBG_LEVEL_INFO
-#define DGB_QUEUE       DBG_LEVEL_INFO
-#define DBG_MSG         DBG_LEVEL_INFO
-#define DBG_BUF         DBG_LEVEL_INFO
-#define DBG_INIT        DBG_LEVEL_INFO
-#define DBG_PLAT        DBG_LEVEL_INFO
-#define DBG_NETIF       DBG_LEVEL_INFO
-#define DBG_ETHER       DBG_LEVEL_INFO
-#define DBG_TOOLS       DBG_LEVEL_INFO
-#define DBG_TIMER       DBG_LEVEL_NONE
-#define DBG_ARP         DBG_LEVEL_INFO
+#define DBG_MBLOCK      DBG_LEVEL_ERROR
+#define DGB_QUEUE       DBG_LEVEL_ERROR
+#define DBG_MSG         DBG_LEVEL_ERROR
+#define DBG_BUF         DBG_LEVEL_ERROR
+#define DBG_INIT        DBG_LEVEL_ERROR
+#define DBG_PLAT        DBG_LEVEL_ERROR
+#define DBG_NETIF       DBG_LEVEL_ERROR
+#define DBG_ETHER       DBG_LEVEL_ERROR
+#define DBG_TOOLS       DBG_LEVEL_ERROR
+#define DBG_TIMER       DBG_LEVEL_ERROR
+#define DBG_ARP         DBG_LEVEL_ERROR
 #define DBG_IP          DBG_LEVEL_INFO
-#define DBG_ICMPv4      DBG_LEVEL_INFO
-#define DBG_SOCKET      DBG_LEVEL_INFO
-#define DBG_RAW         DBG_LEVEL_INFO
+#define DBG_ICMPv4      DBG_LEVEL_ERROR
+#define DBG_SOCKET      DBG_LEVEL_ERROR
+#define DBG_RAW         DBG_LEVEL_ERROR
 
 #define NET_ENDIAN_LITTLE           1
 
@@ -51,6 +51,8 @@
 #define IP_FRAG_MAX_BUF_NR      20
 #define IP_FRAG_SCAN_PERIOD     1
 #define IP_FRAG_TMO             10
+
+#define IP_RTTABLE_SIZE         10
 
 #define RAW_MAX_RECV           50
 #endif // !NET_CFG_H

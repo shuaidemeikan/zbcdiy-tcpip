@@ -280,6 +280,7 @@ int main (void) {
 
 	net_start();
 	
+	//udp_echo_client_start(friend0_ip, 1000);
 	basic_test();
 
 	ping_t p;

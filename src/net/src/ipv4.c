@@ -14,6 +14,88 @@ static mblock_t frag_mblock;
 static nlist_t frag_list;
 static net_timer_t frag_timer;
 
+static nlist_t rt_list;
+static rentry_t rt_table[IP_RTTABLE_SIZE];
+static mblock_t rt_mblock;
+
+#if DBG_DISP_ENABLED(DBG_IP)
+void rt_nlist_display (void) {
+    plat_printf("rt table\n");
+
+    nlist_node_t * node;
+    nlist_for_each(node, &rt_list) {
+        rentry_t * entry = nlist_entry(node, rentry_t, node);
+        dbg_dump_ip("   net: ", &entry->net);
+        dbg_dump_ip("   mask: ", &entry->mask);
+        dbg_dump_ip("   next_hop: ", &entry->next_hop);
+        plat_printf("    netif: %s\n", entry->netif->name);
+    }
+}
+
+#else
+#define rt_nlist_display()
+#endif
+
+void rt_init (void)
+{
+    nlist_init(&rt_list);
+    mblock_init(&rt_mblock, rt_table, sizeof(rentry_t), IP_RTTABLE_SIZE, NLOCKER_NONE);
+}
+
+void rt_add (ipaddr_t* net, ipaddr_t* mask, ipaddr_t* next_hop, netif_t* netif)
+{
+    rentry_t* entry = (rentry_t*)mblock_alloc(&rt_mblock, -1);
+    if (!entry)
+    {
+        dbg_warning(DBG_IP, "mblock alloc failed");
+        return;
+    }
+
+    ipaddr_copy(&entry->net, net);
+    ipaddr_copy(&entry->mask, mask);
+    ipaddr_copy(&entry->next_hop, next_hop);
+    entry->mask_1_cnt = ipaddr_1_cnt(mask);
+    entry->netif = netif;
+
+    nlist_insert_last(&rt_list, &entry->node);
+    rt_nlist_display();
+}
+
+void rt_remove (ipaddr_t* net, ipaddr_t* mask)
+{
+    nlist_node_t* node;
+    nlist_for_each(node, &rt_list)
+    {
+        rentry_t* entry = nlist_entry(node, rentry_t, node);
+        if (ipaddr_is_equal(&entry->net, net) == 0 && ipaddr_is_equal(&entry->mask, mask) == 0)
+        {
+            nlist_remove(&rt_list, &entry->node);
+            mblock_free(&rt_mblock, entry); 
+            return;
+        }
+    }
+    rt_nlist_display();
+}
+
+rentry_t* rt_find (ipaddr_t* ip)
+{
+    rentry_t* curr_entry = (rentry_t*)0;
+    nlist_node_t* node;
+    nlist_for_each(node, &rt_list)
+    {
+        rentry_t* entry = nlist_entry(node, rentry_t, node);
+        uint32_t ip_network_number_uint32 = get_network(ip, &entry->mask);
+        ipaddr_t ip_network_addr_ipaddr;
+        ipaddr_from_buf(&ip_network_addr_ipaddr, (uint8_t*)&ip_network_number_uint32);
+        if (!ipaddr_is_equal(&entry->net, &ip_network_addr_ipaddr))
+            continue;
+
+        if (!curr_entry || (curr_entry->mask_1_cnt < entry->mask_1_cnt))
+            curr_entry = entry;
+    }
+    return curr_entry;
+}
+
 /**
  * 获得一个ip数据包数据部分的大小，也就是不含头部多大
  * @param pkt 待判断的ip数据包
@@ -91,7 +173,7 @@ static void display_ip_frags (void)
 }
 #else
 #define display_ip_pkt(a)
-#define display_ip_frags
+#define display_ip_frags()
 #endif
 
 /**
@@ -397,7 +479,7 @@ net_err_t ipv4_init (void)
         dbg_ERROR(DBG_IP, "frag init failed");
         return err;
     }
-
+    //rt_init();
     dbg_info(DBG_IP, "done");
     return NET_ERR_OK;
 }
@@ -627,6 +709,19 @@ net_err_t ipv4_out(uint8_t protocol, ipaddr_t* dest, ipaddr_t* src, pktbuf_t* bu
 {
     dbg_info(DBG_IP, "send an ip pkt");
     
+    rentry_t* rt = rt_find(dest);
+    if (!rt)
+    {
+        dbg_error(DBG_IP, "can not find route table.");
+        return NET_ERR_UNREACH;
+    }
+
+    ipaddr_t next_hop;
+    if (ipaddr_is_any(&rt->next_hop))
+        ipaddr_copy(&next_hop, dest);
+    else
+        ipaddr_copy(&next_hop, &rt->next_hop);
+
     netif_t* netif = netif_get_default();
     if (netif->mtu && ((buf->total_size + sizeof(ipv4_hdr_t)) > netif->mtu))
     {
@@ -658,7 +753,10 @@ net_err_t ipv4_out(uint8_t protocol, ipaddr_t* dest, ipaddr_t* src, pktbuf_t* bu
     pkt->hdr.ttl = NET_IP_DEFAULT_TTL;
     pkt->hdr.protocol = protocol;
     pkt->hdr.hdr_checksum = 0;
-    ipaddr_to_buf(src, pkt->hdr.src_ip);
+    if (!src || ipaddr_is_any(src))
+        ipaddr_to_buf(&netif->ipaddr, pkt->hdr.src_ip);
+    else
+        ipaddr_to_buf(src, pkt->hdr.src_ip);
     ipaddr_to_buf(dest, pkt->hdr.dest_ip);
     
     // 填充完成
@@ -667,7 +765,7 @@ net_err_t ipv4_out(uint8_t protocol, ipaddr_t* dest, ipaddr_t* src, pktbuf_t* bu
     pkt->hdr.hdr_checksum = pktbuf_checksum16(buf, ipv4_hdr_size(pkt), 0, 1);
     display_ip_pkt(pkt);
 
-    err = netif_out(netif_get_default(), dest, buf);
+    err = netif_out(netif_get_default(), &next_hop, buf);
     if (err < 0)
     {
         dbg_WARNING(DBG_IP, "send ip packet");

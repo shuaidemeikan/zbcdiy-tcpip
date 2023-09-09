@@ -25,6 +25,7 @@ static char netdev0_gw[] = "192.168.74.1";
 static char friend0_ip[] = "192.168.74.3";
 static char netdev0_phy_ip[] = "192.168.74.1";    // 用于收发包的真实网卡ip地址，在qemu上不需要使用
 static char netdev0_mask[] = "255.255.255.0";
+static char bro_addr[] = "255.255.255.255";
 static uint8_t netdev0_hwaddr[] = { 0x00, 0x50, 0x56, 0xc0, 0x00, 0x11 };
 #else
 static const char netdev0_ip[] = "192.168.74.2";

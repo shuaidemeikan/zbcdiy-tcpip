@@ -326,3 +326,27 @@ net_err_t sock_setsockopt_req_in (struct _func_msg_t* msg)
     return sock->ops->setopt(sock, opt->level, opt->optname, opt->optval, opt->len);
     return NET_ERR_OK;
 }
+
+net_err_t sock_close_req_in (struct _func_msg_t* msg)
+{
+    sock_req_t* req = (sock_req_t*)msg->param;
+    x_socket_t* s = get_socket(req->sockfd);
+
+    if (!s)
+    {
+        dbg_error(DBG_SOCKET, "param error");
+        return NET_ERR_PARAM;
+    }
+
+    sock_t* sock = s->sock;
+    if (!sock->ops->close)
+    {
+        dbg_error(DBG_SOCKET, "funtion not imp");
+        return NET_ERR_NOT_SUPPORT;
+    }
+
+    net_err_t err = sock->ops->close(sock);
+
+    socket_free(s);
+    return err;
+}

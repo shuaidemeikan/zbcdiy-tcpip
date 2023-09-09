@@ -29,6 +29,7 @@ const char* x_inet_ntop (int family, const void* addrptr, char* strptr, size_t l
 #define sockaddr        x_sockaddr
 #define sockaddr_in     x_sockaddr_in
 #define timeval         x_timeval
+#define close           x_close
 
 #define socket(family, type, protocol)      x_socket(family, type, protocol)
 #define sendto(s, buf, len, flags, dest, dlen)   x_sendto(s, buf, len, flags, dest, dlen)
