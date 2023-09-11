@@ -107,6 +107,10 @@ ssize_t x_recvfrom(int s, void* buf, size_t len, int flags, const struct x_socka
         req.data.comp_len = 0;
 
         net_err_t err = exmsg_func_exec(sock_recvfrom_req_in, &req);
+        // 函数到这里返回了，但是函数返回不代表读到了数据，可能目标主机还没来得及回应或者回应的数据包还在网络上
+        // 当下层的函数没有读到数据时，会在req内封装一个信号量返回回来，sock_wait_enter是一个封装了等待信号量的函数
+        // 而这个信号量会在协议栈内部收到目标主机发过来的包时增加
+        // 所以当第一次while没有读到数据时，应用程序就会在这卡住，等待协议栈内部收到了对应socket的回包时，才会继续运行
         if (err < 0)
         {
             dbg_ERROR(DBG_SOCKET, "create socket failed.");

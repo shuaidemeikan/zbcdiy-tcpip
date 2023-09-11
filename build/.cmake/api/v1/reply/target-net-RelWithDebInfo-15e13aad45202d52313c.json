@@ -2,10 +2,10 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "Debug/net.exe"
+			"path" : "RelWithDebInfo/net.exe"
 		},
 		{
-			"path" : "Debug/net.pdb"
+			"path" : "RelWithDebInfo/net.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -78,7 +78,7 @@
 			"compileCommandFragments" : 
 			[
 				{
-					"fragment" : "/DWIN32 /D_WINDOWS /W3 /MDd /Zi /Ob0 /Od /RTC1"
+					"fragment" : "/DWIN32 /D_WINDOWS /W3 /MD /Zi /O2 /Ob1 /DNDEBUG"
 				}
 			],
 			"defines" : 
@@ -132,10 +132,8 @@
 			[
 				0,
 				2,
-				3,
-				30,
-				31,
-				32,
+				4,
+				5,
 				33,
 				34,
 				35,
@@ -155,8 +153,12 @@
 				49,
 				50,
 				51,
+				52,
 				53,
-				55
+				54,
+				55,
+				57,
+				59
 			]
 		}
 	],
@@ -172,7 +174,7 @@
 		"commandFragments" : 
 		[
 			{
-				"fragment" : "/DWIN32 /D_WINDOWS /W3 /MDd /Zi /Ob0 /Od /RTC1",
+				"fragment" : "/DWIN32 /D_WINDOWS /W3 /MD /Zi /O2 /Ob1 /DNDEBUG",
 				"role" : "flags"
 			},
 			{
@@ -221,10 +223,8 @@
 			[
 				0,
 				2,
-				3,
-				30,
-				31,
-				32,
+				4,
+				5,
 				33,
 				34,
 				35,
@@ -244,8 +244,12 @@
 				49,
 				50,
 				51,
+				52,
 				53,
-				55
+				54,
+				55,
+				57,
+				59
 			]
 		},
 		{
@@ -253,8 +257,7 @@
 			"sourceIndexes" : 
 			[
 				1,
-				4,
-				5,
+				3,
 				6,
 				7,
 				8,
@@ -279,9 +282,12 @@
 				27,
 				28,
 				29,
-				52,
-				54,
-				56
+				30,
+				31,
+				32,
+				56,
+				58,
+				60
 			]
 		}
 	],
@@ -296,6 +302,17 @@
 		{
 			"backtrace" : 1,
 			"path" : "src/app/test/echo/udp_echo_client.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/app/test/echo/udp_echo_server.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "src/app/test/echo/udp_echo_server.h",
 			"sourceGroupIndex" : 1
 		},
 		{
@@ -442,6 +459,11 @@
 		},
 		{
 			"backtrace" : 1,
+			"path" : "src/net/net/udp.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
 			"compileGroupIndex" : 0,
 			"path" : "src/net/src/arp.c",
 			"sourceGroupIndex" : 0
@@ -564,6 +586,12 @@
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
 			"path" : "src/net/src/tools.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "src/net/src/udp.c",
 			"sourceGroupIndex" : 0
 		},
 		{

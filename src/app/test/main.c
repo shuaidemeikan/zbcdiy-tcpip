@@ -14,6 +14,8 @@
 #include "ipv4.h"
 #include "ping\ping.h"
 #include "exmsg.h"
+#include "echo\udp_echo_client.h"
+#include "echo\udp_echo_server.h"
 
 pcap_data_t netdev0_data = {.ip = netdev0_phy_ip, .hwaddr = netdev0_hwaddr};
 net_err_t netdev_init()
@@ -280,11 +282,11 @@ int main (void) {
 
 	net_start();
 	
-	//udp_echo_client_start(friend0_ip, 1000);
+	udp_echo_server_start(1000);
 	basic_test();
 
 	ping_t p;
-	ping_run(&p, friend0_ip, 4, 64, 1000);
+	//ping_run(&p, friend0_ip, 4, 64, 1000);
 
 	net_err_t test_func (struct _func_msg_t * msg);
 	int arg = 0x1234;
@@ -296,7 +298,7 @@ int main (void) {
 		plat_printf(">>");
 		scanf("%s%s", cmd, param);
 		if (strcmp(cmd, "ping") == 0)
-			ping_run(&p, param, 4, 1000, 1000);
+			ping_run(&p, param, 4, 64, 1000);
 	}
 		
 

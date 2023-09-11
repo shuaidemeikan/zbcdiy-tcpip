@@ -9,17 +9,17 @@ uint32_t x_inet_addr (const char* str);
 int x_inet_pton (int family, const char* strptr, void* addrptr);
 const char* x_inet_ntop (int family, const void* addrptr, char* strptr, size_t len);
 
-#undef x_htons
-#define htons(x)        x_htons(v)
+#undef htons
+#define htons(v)        x_htons(v)
 
-#undef x_ntohs
-#define ntohs(x)        x_ntohs(v)
+#undef ntohs
+#define ntohs(v)        x_ntohs(v)
 
-#undef x_htonl
-#define htonl(x)        x_htonl(v)
+#undef htonl
+#define htonl(v)        x_htonl(v)
 
-#undef x_ntohl
-#define ntohl(x)        x_ntohl(v)
+#undef ntohl
+#define ntohl(v)        x_ntohl(v)
 
 #define inet_ntoa(in)       x_inet_ntoa(in)
 #define inet_addr(str)      x_inet_addr(str)

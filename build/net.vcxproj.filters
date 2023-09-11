@@ -4,6 +4,9 @@
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\app\test\echo\udp_echo_client.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\app\test\echo\udp_echo_server.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\app\test\main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -73,6 +76,9 @@
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\tools.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\src\udp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\plat\net_plat.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -85,6 +91,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\app\test\echo\udp_echo_client.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\app\test\echo\udp_echo_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\app\test\ping\ping.h">
@@ -163,6 +172,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\tools.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\net\net\udp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\zbc\Desktop\开发\diy-tcpip-master\code\start\src\plat\net_plat.h">

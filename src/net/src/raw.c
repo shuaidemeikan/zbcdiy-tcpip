@@ -41,6 +41,10 @@ static void display_raw_list (void)
 #define display_raw_list()
 #endif
 
+/**
+ * @brief raw模块初始化
+ * @return net_err_t类型的返回值 
+ */
 net_err_t raw_init (void)
 {
     dbg_info(DBG_RAW, "raw init");
@@ -51,6 +55,13 @@ net_err_t raw_init (void)
     return NET_ERR_OK;
 }
 
+/**
+ * @brief 利用源地址，目标地址，协议从raw结构的链表里找出来一个raw结构
+ * @param src 
+ * @param dest 
+ * @param protocol 
+ * @return raw_t* 
+ */
 static raw_t* sock_find (ipaddr_t* src, ipaddr_t* dest, int protocol)
 {
     nlist_node_t* node;
@@ -58,6 +69,7 @@ static raw_t* sock_find (ipaddr_t* src, ipaddr_t* dest, int protocol)
     {
         raw_t* raw = (raw_t*)nlist_entry(node, sock_t, node);
 
+        // 如果不为空，那就比较一下是否一致，下面是三个都是这样
         if (raw->base.protocol && (raw->base.protocol != protocol))
             continue;
         if (!ipaddr_is_any(&raw->base.local_ip) && !ipaddr_is_equal(&raw->base.local_ip, src))
@@ -72,7 +84,7 @@ static raw_t* sock_find (ipaddr_t* src, ipaddr_t* dest, int protocol)
 }
 
 /**
- * raw类型的socket的发送函数
+ * @brief raw类型的socket的发送函数
  * @param s sock
  * @param buf 待发送的内容
  * @param len 待发送的长度
@@ -127,29 +139,47 @@ end_send_to:
     return err;
 }
 
+/**
+ * @brief raw类型的socket的接收函数
+ * @param s sock
+ * @param buf 用来存储接收到的内容的缓冲区
+ * @param len 需要接收的长度
+ * @param flags 待发送的flags，其实用不到
+ * @param dest 目标地址
+ * @param dest_len 目标地址长度
+ * @param result_len 具体接收了多少个字节
+ * @return net_err_t类型
+ */
 static net_err_t raw_recvfrom (struct _sock_t* s, void* buf, size_t len, int flags, const struct x_sockaddr* dest, x_socklen_t dest_len, ssize_t * result_len)
 {
     raw_t* raw = (raw_t*)s;
 
+    // 从raw的buf里移出来一个数据包，
     nlist_node_t * first = nlist_remove_first(&raw->recv_list);
     if (!first)
     {
+        // 如果buf里没有数据，那么就说明协议栈内部还没有收到从目标机器发送的回包，返回一个需要等待的错误类型，让上层函数等待
+        // 此时上层函数是属于sock模块的，sock模块依然属于协议栈内部，会占用工作线程，所以实际上等待的操作是在上层函数的上层函数里实现的
         dbg_error(DBG_RAW, "no packet");
         return NET_ERR_NEED_WAIT;
     }
 
+    // 获得ip数据包的包头
     pktbuf_t* pktbuf = nlist_entry(first, pktbuf_t, node);
     ipv4_hdr_t* iphdr = (ipv4_hdr_t*)pktbuf_data(pktbuf);
 
+    // 将ip数据包的源ip拷贝到dest中，以便上层函数可以知道是谁发过来的数据包
     struct x_sockaddr_in* addr = (struct x_sockaddr_in*)dest;
     plat_memset(addr, 0, sizeof(struct x_sockaddr_in));
     addr->sin_family = AF_INET;
     addr->sin_port = 0;
     plat_memcpy(&addr->sin_addr, &iphdr->src_ip, IPV4_ADDR_SIZE);
 
+    // 最大大小是size，如果收到的数据包大小不大于size，则size为收到的数据包大小
     int size = (pktbuf->total_size > (int)len ? len : pktbuf->total_size);
     pktbuf_reset_acc(pktbuf);
 
+    // 把buf拷贝到待拷贝区
     net_err_t err = pktbuf_read(pktbuf, buf, size);
     if(err < 0)
     {
@@ -157,11 +187,18 @@ static net_err_t raw_recvfrom (struct _sock_t* s, void* buf, size_t len, int fla
         return err;
     }
 
+    // 释放收到的buf
     pktbuf_free(pktbuf);
+    // 设置读取的大小
     *result_len = size;
-    return NET_ERR_NEED_WAIT;
+    return NET_ERR_OK;
 }
 
+/**
+ * @brief 关闭一个raw结构
+ * @param sock 待关闭的sock结构
+ * @return net_err_t 
+ */
 net_err_t raw_close (sock_t* sock)
 {
     raw_t* raw = (raw_t*)sock;
@@ -195,6 +232,7 @@ sock_t* raw_create (int family, int protocol)
         .sendto = raw_sendto,
         .recvfrom = raw_recvfrom,
         .close = raw_close,
+        .setopt = sock_setopt,
     };
 
     // 申请一个rwa
@@ -230,14 +268,22 @@ create_failed:
     return (sock_t*)0;
 }
 
+/**
+ * @brief 当协议栈内部接收到应该交给raw类型的socket来处理的数据包(例如icmp回应包，不认识的ipv4封装的数据包)时，会调用raw_in
+ *        该函数会找到该数据包对应的raw结构，随后唤醒等待中的应用程序
+ * @param buf 
+ * @return ** net_err_t 
+ */
 net_err_t raw_in (pktbuf_t* buf)
 {
+    // 拿到ipv4的包头
     ipv4_hdr_t* iphdr = (ipv4_hdr_t*)pktbuf_data(buf);
     
     ipaddr_t src, dest;
     ipaddr_from_buf(&src, iphdr->src_ip);
     ipaddr_from_buf(&dest, iphdr->dest_ip);
 
+    // 查找该数据包在raw表中对应的raw结构
     raw_t* raw = (raw_t*)sock_find(&src, &dest, iphdr->protocol);
     if (!raw)
     {
@@ -245,10 +291,13 @@ net_err_t raw_in (pktbuf_t* buf)
         return NET_ERR_UNREACH;
     }
 
+    // 把数据包交给raw处理
     if (nlist_count(&raw->recv_list) < RAW_MAX_RECV)
     {
+        // 先把数据包写到raw结构的buf里
         nlist_insert_first(&raw->recv_list, &buf->node);
-
+        
+        // 再唤醒一个等待中的线程，这个线程应该是应用程序在调用socket的recvfrom的时候等待的
         sock_wakeup((sock_t*)raw, SOCK_WAIT_READ, NET_ERR_OK);
     }else
         pktbuf_free(buf);

@@ -4,23 +4,40 @@
 #include "debug.h"
 #include "socket.h"
 #include "raw.h"
+#include "udp.h"
 
 #define SOCKET_MAX_NR   10
 static x_socket_t socket_tbl[SOCKET_MAX_NR];
 
+/**
+ * @brief sock信号量的初始化
+ * @param wait 待初始化的sock信号量
+ * @param err 
+ */
 net_err_t sock_wait_init (sock_wait_t* wait)
 {
     wait->waitting = 0;
     wait->err = NET_ERR_OK;
-    wait->sem = sys_sem_create(0);
+    wait->sem = sys_sem_create(0);          // 创建的信号量默认是0
     return wait->sem == SYS_SEM_INVALID ? NET_ERR_SYS : NET_ERR_OK;
 }
 
+/**
+ * @brief 销毁一个sock信号量
+ * @param wait 被销毁的sock信号量
+ */
 void sock_wait_destory (sock_wait_t* wait)
 {
     if (wait->sem != SYS_SEM_INVALID)
         sys_sem_free(wait->sem);
 }
+
+/**
+ * @brief 往req里写入一个sock信号量和等待的时间
+ * @param wait 待写入的sock信号量
+ * @param tmo 等待的时间
+ * @param req 被写入的req
+ */
 void sock_wait_add (sock_wait_t* wait, int tmo, struct _sock_req_t* req)
 {
     wait->waitting++;
@@ -28,6 +45,12 @@ void sock_wait_add (sock_wait_t* wait, int tmo, struct _sock_req_t* req)
     req->wait_tmo = tmo;
 }
 
+/**
+ * @brief 等待一个信号量，本质上就是封装了sys_sem_wait，用来等待sock类型的信号量
+ * @param wait sock信号量
+ * @param tmo  等待的时间
+ * @return net_err_t 
+ */
 net_err_t sock_wait_enter (sock_wait_t* wait, int tmo)
 {
     // 等待tmo这么长时间，如果小于0，就说明等待超时了
@@ -37,6 +60,11 @@ net_err_t sock_wait_enter (sock_wait_t* wait, int tmo)
     return wait->err;
 }
 
+/**
+ * @brief 给一个信号量+1
+ * @param wait 被增加的信号量
+ * @param err 
+ */
 void sock_wait_leave (sock_wait_t* wait, net_err_t err)
 {
     if (wait->waitting > 0)
@@ -47,6 +75,12 @@ void sock_wait_leave (sock_wait_t* wait, net_err_t err)
     }
 }
 
+/**
+ * @brief 给一个信号量+1，起到的作用和sock_wait_leave是一样的，只是针对不同的socket类型，传不同的参数给sock_wait_leave
+ * @param sock 
+ * @param type 
+ * @param err 
+ */
 void sock_wakeup (sock_t* sock, int type, int err)
 {
     if (type & SOCK_WAIT_CONN)
@@ -183,7 +217,8 @@ net_err_t sock_create_req_in (struct _func_msg_t* msg)
         int protocol;
         sock_t* (*create) (int family, int protocol);
     }sock_tbl[] = {
-        [SOCK_RAW] = {.protocol = IPPROTP_ICMP, .create = raw_create,}
+        [SOCK_RAW] = {.protocol = IPPROTP_ICMP, .create = raw_create,},
+        [SOCK_DGRAM] = {.protocol = IPPROTO_UDP, .create = udp_create,},
     };
 
     // 解析一下参数
@@ -245,7 +280,7 @@ net_err_t sock_init(sock_t* sock, int family, int protocol, const sock_ops_t* op
 }
 
 /**
- * 工作线程实际上调用的socket接口的发送函数
+ * @brief 工作线程实际上调用的socket接口的发送函数
  * @param msg 发送函数需要的参数
  * @return err类型的返回值
  */
@@ -271,6 +306,7 @@ net_err_t sock_sendto_req_in (struct _func_msg_t* msg)
     // 调对应socket类型的发送函数
     net_err_t err = sock->ops->sendto(sock, data->buf, data->len, data->flags, data->addr, *data->addrlen, &data->comp_len);
     
+    // 这一块的处理具体注释见下面一个函数
     if (err == NET_ERR_NEED_WAIT)
     {
         if (sock->send_wait)
@@ -280,6 +316,11 @@ net_err_t sock_sendto_req_in (struct _func_msg_t* msg)
     return err;
 }
 
+/**
+ * @brief 工作线程实际上调用的recvfrom接口的接收函数
+ * @param msg 发送函数需要的参数
+ * @return err类型的返回值
+ */
 net_err_t sock_recvfrom_req_in (struct _func_msg_t* msg)
 {
     // 取出参数
@@ -302,6 +343,8 @@ net_err_t sock_recvfrom_req_in (struct _func_msg_t* msg)
     // 调对应socket类型的发送函数
     net_err_t err = sock->ops->recvfrom(sock, data->buf, data->len, data->flags, data->addr, *data->addrlen, &data->comp_len);
     
+    // 如果对应结构的recvfrom函数没有读到数据包(通常来说第一次肯定是读不到的，因为在数据包发送过去的下一步就是调用读取，但是数据包发过来还需要时间)
+    // 就会返回NET_ERR_NEED_WAIT，此时如果sock内的recv_wait这个信号量的本体已经存在，那么就把这个信号量返回给上层函数，让上层调用的函数来等待信号量
     if (err == NET_ERR_NEED_WAIT)
     {
         if (sock->recv_wait)

@@ -510,13 +510,14 @@ net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t
     case NET_PROTOCOL_TCP:
         break;
     default:
+    // 不是tcp，不是udp， 不是icmp，那就是一些莫名其妙的协议会跑到这，理论上永远不会跑到这
+        dbg_warning(DBG_IP, "unknown protocol %d, drop it.\n", pkt->hdr.protocol);
         net_err_t err = raw_in(buf);
         if (err < 0)
         {
             dbg_error(DBG_IP, "raw in failed!");
             return err;
         }
-        break;
     }
 
     //pktbuf_free(buf);

@@ -19,7 +19,7 @@ typedef struct _sock_wait_t
 {
     sys_sem_t sem;          // 等待的信号量
     net_err_t err;          // 错误码
-    int waitting;           // 等待sem计数
+    int waitting;           // 信号量具体有几个
 }sock_wait_t;
 
 typedef struct _sock_ops_t
