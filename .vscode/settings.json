@@ -70,7 +70,8 @@
         "net_api.h": "c",
         "raw.h": "c",
         "icmpv4.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "udp.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled",
     "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools"

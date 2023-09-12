@@ -504,15 +504,24 @@ net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t
         break;
     }
     case NET_PROTOCOL_UDP:
-        iphdr_htons(pkt);
-        icmpv4_out_unreach(src_ip, &netif->ipaddr, ICMPv4_UNREACH_PORT, buf);
+        net_err_t err = udp_in(buf, src_ip, dest_ip);
+        if (err < 0)
+        {
+            dbg_warning(DBG_IP, "udp in error");
+            if (err == NET_ERR_UNREACH)
+            {
+                iphdr_htons(pkt);
+                icmpv4_out_unreach(src_ip, &netif->ipaddr, ICMPv4_UNREACH_PORT, buf);
+            }
+            return err;
+        }
         break;
     case NET_PROTOCOL_TCP:
         break;
     default:
     // 不是tcp，不是udp， 不是icmp，那就是一些莫名其妙的协议会跑到这，理论上永远不会跑到这
         dbg_warning(DBG_IP, "unknown protocol %d, drop it.\n", pkt->hdr.protocol);
-        net_err_t err = raw_in(buf);
+        err = raw_in(buf);
         if (err < 0)
         {
             dbg_error(DBG_IP, "raw in failed!");

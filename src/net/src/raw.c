@@ -150,7 +150,7 @@ end_send_to:
  * @param result_len 具体接收了多少个字节
  * @return net_err_t类型
  */
-static net_err_t raw_recvfrom (struct _sock_t* s, void* buf, size_t len, int flags, const struct x_sockaddr* dest, x_socklen_t dest_len, ssize_t * result_len)
+static net_err_t raw_recvfrom (struct _sock_t* s, void* buf, size_t len, int flags, struct x_sockaddr* dest, x_socklen_t dest_len, ssize_t * result_len)
 {
     raw_t* raw = (raw_t*)s;
 

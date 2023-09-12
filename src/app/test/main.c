@@ -282,7 +282,8 @@ int main (void) {
 
 	net_start();
 	
-	udp_echo_server_start(1000);
+	//udp_echo_server_start(1000);
+	udp_echo_client_start("192.168.74.3", 4567);
 	basic_test();
 
 	ping_t p;

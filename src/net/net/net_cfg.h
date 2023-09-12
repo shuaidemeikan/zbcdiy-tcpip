@@ -59,4 +59,6 @@
 
 #define UDP_MAX_NR              4
 #define UDP_MAX_RECV            50
+#define NET_PORT_DYN_START      1024
+#define NET_PORT_DYN_END        65535
 #endif // !NET_CFG_H

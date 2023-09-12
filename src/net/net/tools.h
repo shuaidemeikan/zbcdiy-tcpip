@@ -4,10 +4,11 @@
 #include "stdint.h"
 #include "net_cfg.h"
 #include "net_err.h"
+#include "pktbuf.h"
 
 static inline uint16_t swap_u16 (uint16_t v)
 {
-    uint16_t r = ((v & 0xff) << 8) | (v >> 8) & 0xff;
+    uint16_t r = ((v & 0xFF) << 8) | ((v >> 8) & 0xFF);
     return r;
 }
 
@@ -34,5 +35,5 @@ static inline uint32_t swap_u32 (uint32_t v)
 net_err_t tools_init (void);
 
 uint16_t checksum16 (int offset, void * buf, uint16_t len, uint32_t pre_sum, int complement);
-
+uint16_t checksum_peso(const uint8_t * src_ip, const uint8_t* dest_ip, uint8_t protocol, pktbuf_t * buf);
 #endif 

@@ -59,7 +59,9 @@ net_err_t exmsg_func_exec (exmsg_func_t func, void* param)
 
     sys_sem_wait(func_msg.wait_sem, 0);
     dbg_info(DBG_MSG, "end call func: %p", func);
-    return NET_ERR_OK;
+    
+    sys_sem_free(func_msg.wait_sem);
+    return func_msg.err;
 }
 
 void do_func (func_msg_t* func_msg)

@@ -66,7 +66,7 @@ struct x_sockaddr_in
 {
     uint8_t sin_len;
     uint8_t sin_family;
-    uint8_t sin_port;
+    uint16_t sin_port;
     struct x_in_addr sin_addr;
     char sin_zero[8];               // 填充字段，一般全为0
 };
