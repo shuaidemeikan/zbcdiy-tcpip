@@ -5,6 +5,7 @@
 #include "socket.h"
 #include "raw.h"
 #include "udp.h"
+#include "tools.h"
 
 #define SOCKET_MAX_NR   10
 static x_socket_t socket_tbl[SOCKET_MAX_NR];
@@ -392,4 +393,84 @@ net_err_t sock_close_req_in (struct _func_msg_t* msg)
 
     socket_free(s);
     return err;
+}
+
+net_err_t sock_connect_req_in (struct _func_msg_t* msg)
+{
+    sock_req_t* req = (sock_req_t*)msg->param;
+    x_socket_t* s = get_socket(req->sockfd);
+
+    if (!s)
+    {
+        dbg_error(DBG_SOCKET, "param error");
+        return NET_ERR_PARAM;
+    }
+
+    sock_t* sock = s->sock;
+    sock_conn_t* conn = &req->conn;
+
+    if (!sock->ops->connect)
+    {
+        dbg_error(DBG_SOCKET, "funtion not imp");
+        return NET_ERR_NOT_SUPPORT;
+    }
+
+    net_err_t err = sock->ops->connect(sock, conn->addr, conn->addrlen);
+    
+    if (err == NET_ERR_NEED_WAIT)
+    {
+        if (sock->recv_wait)
+            sock_wait_add(sock->recv_wait, sock->recv_tmo, req);
+    }
+    return err;
+}
+
+net_err_t sock_send_req_in (struct _func_msg_t* msg)
+{
+    sock_req_t* req = (sock_req_t*)msg->param;
+    x_socket_t* s = get_socket(req->sockfd);
+    if (!s)
+    {
+        dbg_error(DBG_SOCKET, "param error");
+        return NET_ERR_PARAM;
+    }
+    sock_t* sock = s->sock;
+    sock_data_t* data = &req->data;
+
+    if (!sock->ops->send)
+    {
+        dbg_error(DBG_SOCKET, "funtion not imp");
+        return NET_ERR_NOT_SUPPORT;
+    }
+
+    // 调对应socket类型的发送函数
+    net_err_t err = sock->ops->send(sock, data->buf, data->len, data->flags, &data->comp_len);
+    
+    // 这一块的处理具体注释见下面一个函数
+    if (err == NET_ERR_NEED_WAIT)
+    {
+        if (sock->send_wait)
+            sock_wait_add(sock->send_wait, sock->send_tmo, req);
+    }
+    
+    return err;
+}
+
+net_err_t sock_connect(sock_t * sock, const struct x_sockaddr* addr, x_socklen_t addrlen)
+{
+    struct x_sockaddr_in* addr_in = (struct x_sockaddr_in*)addr;
+    ipaddr_from_buf(&sock->remote_ip, addr_in->sin_addr.addr_array);
+    sock->remote_port = x_ntohs(addr_in->sin_port);
+    return NET_ERR_OK;
+}
+
+net_err_t sock_send (struct _sock_t* s, const void* buf, size_t len, int flags, ssize_t* result_len)
+{
+    struct x_sockaddr_in addr;
+    addr.sin_family = s->family;
+    addr.sin_port = x_htons(s->remote_port);
+    ipaddr_to_buf(&s->remote_ip, addr.sin_addr.addr_array);
+
+    s->ops->sendto(s, buf, len, flags, (const struct x_sockaddr*)&addr, sizeof(addr), result_len);
+    return NET_ERR_OK;
 }

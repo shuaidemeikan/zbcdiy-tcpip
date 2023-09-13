@@ -19,9 +19,27 @@ static void display_udp_packet(udp_pkt_t * pkt) {
     plat_printf("length: %d bytes\n", pkt->hdr.total_len);
     plat_printf("checksum:  %04x\n", pkt->hdr.check_sum);
 }
+
+static void display_udp_list (void)
+{
+    plat_printf("---------- udp list ----------");
+
+    nlist_node_t* node;
+    int idx = 0;
+    nlist_for_each(node, &udp_list)
+    {
+        udp_t* udp = (udp_t*)nlist_entry(node, sock_t, node);
+        plat_printf("[%d]\n", idx++);
+        dbg_dump_ip("   local:",&udp->base.local_ip);
+        dbg_dump_ip("   remote:",&udp->base.remote_ip);
+        plat_printf("\n");
+    }
+}
+
 #else
 
 #define display_udp_packet(packet)
+#define static void display_udp_list ()
 #endif
 
 net_err_t udp_init(void)
@@ -71,6 +89,9 @@ static udp_t* udp_find (ipaddr_t* src, uint16_t sport, ipaddr_t* dest, uint16_t 
         if (sock->local_port != sport)
             continue;
 
+        if (!sock->remote_port && (sock->remote_port != dport))
+            continue;
+
         if (!ipaddr_is_any(&sock->local_ip) && !ipaddr_is_equal(&sock->local_ip, src))
             continue;
 
@@ -106,7 +127,7 @@ static net_err_t udp_sendto (struct _sock_t* s, const void* buf, size_t len, int
         return NET_ERR_PARAM;
     }
 
-    if (s->remote_port && (dport == s->remote_port))
+    if (s->remote_port && (dport != s->remote_port))
     {
         dbg_error(DBG_UDP, "dest port is incorrect");
         return NET_ERR_PARAM;
@@ -148,6 +169,7 @@ end_send_to:
     pktbuf_free(pktbuf);
     return err;
 }
+
 
 
 static net_err_t udp_recvfrom (struct _sock_t* s, void* buf, size_t len, int flags, struct x_sockaddr* dest, x_socklen_t dest_len, ssize_t * result_len)
@@ -195,13 +217,43 @@ static net_err_t udp_recvfrom (struct _sock_t* s, void* buf, size_t len, int fla
     return NET_ERR_OK;
 }
 
+net_err_t udp_close (sock_t* sock)
+{
+    udp_t* udp = (udp_t*)sock;
+    nlist_remove(&udp_list, &sock->node);
+
+    nlist_node_t* node;
+    while ((node = nlist_remove_first(&udp->recv_list)))
+    {
+        pktbuf_t* buf = nlist_entry(node, pktbuf_t, node);
+        pktbuf_free(buf);
+    }
+
+    sock_uninit(sock);
+    mblock_free(&udp_mblock, sock);
+
+    display_udp_list();
+
+    return NET_ERR_OK;
+
+}
+
+net_err_t udp_connect (struct _sock_t* s, const struct x_sockaddr* dest, x_socklen_t dest_len)
+{
+    sock_connect(s, dest, dest_len);
+    return NET_ERR_OK;
+}
+
 sock_t* udp_create (int family, int protocol)
 {
     // 创建用于udp操作的函数
     static const sock_ops_t udp_ops = {
         .setopt = sock_setopt,
         .sendto = udp_sendto,
-        .recvfrom = udp_recvfrom
+        .recvfrom = udp_recvfrom,
+        .close = udp_close,
+        .connect = udp_connect,
+        .send = sock_send,
     };
 
     // 申请一个udp结构
@@ -319,7 +371,7 @@ net_err_t udp_in (pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
         dbg_error(DBG_UDP, "udp pkt check failed");
         return err;
     }
-    display_udp_packet(udp_pkt);
+    display_udp_packet(udp_pkt); 
 
     pktbuf_remove_header(buf, (int)(sizeof(udp_hdr_t) - sizeof(udp_from_t)));
     udp_from_t* from = (udp_from_t*)pktbuf_data(buf);

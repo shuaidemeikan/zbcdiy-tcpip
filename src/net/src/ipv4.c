@@ -6,6 +6,7 @@
 #include "mblock.h"
 #include "timer.h"
 #include "raw.h"
+#include "udp.h"
 
 static uint16_t packet_id = 0;
 

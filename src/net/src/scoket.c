@@ -172,3 +172,80 @@ int x_close (int s)
 
     return 0;
 }
+
+int x_connect(int sockfd, const struct x_sockaddr* addr, x_socklen_t len)
+{
+    if (len != sizeof(struct x_sockaddr) || !addr)
+    {
+        dbg_error(DBG_SOCKET, "socket connect addr error");
+        return -1;
+    }
+
+    if (addr->sin_family != AF_INET)
+    {
+        dbg_error(DBG_SOCKET, "socket connect addr family error");
+        return -1;
+    }
+
+    const struct x_sockaddr_in* addr_in = (const struct x_sockaddr_in*)addr;
+    if ((addr_in->sin_addr.s_addr == INADDR_ANY) || !addr_in->sin_port)
+    {
+        dbg_error(DBG_SOCKET, "ip or port is empty");
+        return -1;
+    }
+
+    sock_req_t req;
+    req.wait = (sock_wait_t*)0;
+    req.sockfd = sockfd;
+    req.conn.addr = addr;
+    req.conn.addrlen = len;
+
+    net_err_t err = exmsg_func_exec(sock_connect_req_in, &req);
+    if (err < 0)
+    {
+        dbg_ERROR(DBG_SOCKET, "socket connect do fun failed.");
+        return -1;
+    }
+
+    return 0;
+}
+
+ssize_t x_send(int s, const void* buf, size_t len, int flags)
+{
+     if (!buf || !len)
+    {
+        dbg_error(DBG_SOCKET, "sendto failed, buf or len is null.");
+        return -1;
+    }
+
+    ssize_t send_size = 0;                  // 用来统计总共发送了多少
+    uint8_t* start = (uint8_t*)buf;         // 发送的地址
+    while (len > 0)
+    {
+        sock_req_t req;
+        req.wait = (sock_wait_t*)0;
+        req.wait_tmo = 0;
+        req.sockfd = s;
+        req.data.buf = start;
+        req.data.len = len;
+        req.data.flags = 0;
+
+        net_err_t err = exmsg_func_exec(sock_send_req_in, &req);
+        if (err < 0)
+        {
+            dbg_ERROR(DBG_SOCKET, "create socket failed.");
+            return -1;
+        }
+
+        if (req.wait && ((err = sock_wait_enter(req.wait, req.wait_tmo)) < 0))
+        {
+            dbg_error(DBG_SOCKET, "recv failed");
+            return -1;
+        }
+
+        len -= req.data.comp_len;
+        send_size += req.data.comp_len;
+        start += req.data.comp_len;
+    }
+    return send_size;
+}

@@ -17,15 +17,13 @@ int udp_echo_client_start (const char* ip, int port)
     }
 
     // 设置地址
-    struct sockaddr_in server_addr;
+    struct x_sockaddr_in server_addr;
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = inet_addr(ip);
     server_addr.sin_port = htons(port);
 
-#ifdef USE_CONNECT
-    x_connect(s, (struct sockaddr*)&server_addr, sizeof(server_addr));
-#endif
+    connect(s, (const struct x_sockaddr*)&server_addr, sizeof(server_addr));
     printf(">>");
     char buf[128];
     while (fgets(buf, sizeof(buf), stdin) != NULL)
@@ -35,11 +33,8 @@ int udp_echo_client_start (const char* ip, int port)
         
         size_t total_len = strlen(buf);
 
-#ifdef USE_CONNECT
-        ssize_t size = x_send(s, buf, total_len, 0);
-#else
-        ssize_t size = sendto(s, buf, total_len, 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
-#endif
+        ssize_t size = send(s, buf, total_len, 0);
+        //ssize_t size = sendto(s, buf, total_len, 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
         if (size < 0)
         {
             printf("sendto error");
