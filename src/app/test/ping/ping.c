@@ -53,7 +53,7 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
     addr.sin_addr.s_addr = inet_addr(dest);
     addr.sin_port = 0;
 
-    //connect(s, (const struct sockaddr*)&addr, sizeof(addr));
+    connect(s, (const struct sockaddr*)&addr, sizeof(addr));
 
     int fill_size = size > PING_BUFFER_SIZE ? PING_BUFFER_SIZE : size;      // 设置ip包载荷最大大小
     // 填充载荷
@@ -71,8 +71,8 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
         ping->req.echo_hdr.seq = seq;
         ping->req.echo_hdr.checksum16 = checksum(&ping->req, total_size);
 
-        int size = sendto(s, (const char*)&ping->req, total_size, 0, (const struct sockaddr*)&addr, sizeof(addr));
-        //int size = send(s, (const char*)&ping->req, total_size, 0);     // 把包发出去
+        //int size = sendto(s, (const char*)&ping->req, total_size, 0, (const struct sockaddr*)&addr, sizeof(addr));
+        int size = send(s, (const char*)&ping->req, total_size, 0);     // 把包发出去
         // 上面的函数会返回发出去包的大小，如果大小小于0，说明发送失败了
         if (size < 0)
         {
@@ -86,11 +86,11 @@ void ping_run (ping_t* ping, const char* dest, int count, int size, int interval
 
         do
         {
-            struct sockaddr_in from_addr;
+            //struct sockaddr_in from_addr;
             int addr_len = sizeof(addr);
-            size = recvfrom(s, (char*)&ping->reply, sizeof(ping->reply), 0, (struct sockaddr*)&from_addr, &addr_len);
+            //size = recvfrom(s, (char*)&ping->reply, sizeof(ping->reply), 0, (struct sockaddr*)&from_addr, &addr_len);
             // 接收回包
-            //size = recv(s, (char*)&ping->reply, sizeof(ping->reply), 0);
+            size = recv(s, (char*)&ping->reply, sizeof(ping->reply), 0);
             if (size < 0)
             {
                 plat_printf("ping recv tmo\n");

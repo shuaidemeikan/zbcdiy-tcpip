@@ -113,6 +113,11 @@ net_err_t icmpv4_in (ipaddr_t* src_ip, ipaddr_t* netif_ip, pktbuf_t* buf)
         return icmpv4_echo_reply(src_ip, netif_ip, buf);
     }
     
+    case 3:
+    {
+        break;
+    }
+
     // 不是icmp请求包，那就是回应包，收到回应包就丢给raw结构
     default:
     {   

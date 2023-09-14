@@ -36,5 +36,7 @@ const char* x_inet_ntop (int family, const void* addrptr, char* strptr, size_t l
 #define recvfrom(s, buf, len, flags, src, slen)   x_recvfrom(s, buf, len, flags, src, slen)
 #define setsockopt(s, level, optname, optval, len)   x_setsockopt(s, level, optname, optval, len)
 #define connect(s, dest, dlen)    x_connect(s, dest, dlen)
-#define send(s, buf, len, flags)   x_send(s, buf, len, flags);
+#define send(s, buf, len, flags)   x_send(s, buf, len, flags)
+#define recv(s, buf, len, flags)   x_recv(s, buf, len, flags)
+#define bind(s, src, len)         x_bind(s, src, len)
 #endif // !

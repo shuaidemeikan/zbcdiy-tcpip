@@ -19,6 +19,7 @@ typedef enum _net_err_t
     NET_ERR_BROKEN = -12,
     NET_ERR_UNREACH = -13,
     NET_ERR_CHECKSUM = -14,
+    NET_ERR_BINDED = -15,
     
 }net_err_t;
 

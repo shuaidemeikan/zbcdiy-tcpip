@@ -188,7 +188,7 @@ int x_connect(int sockfd, const struct x_sockaddr* addr, x_socklen_t len)
     }
 
     const struct x_sockaddr_in* addr_in = (const struct x_sockaddr_in*)addr;
-    if ((addr_in->sin_addr.s_addr == INADDR_ANY) || !addr_in->sin_port)
+    if ((addr_in->sin_addr.s_addr == INADDR_ANY) && !addr_in->sin_port)
     {
         dbg_error(DBG_SOCKET, "ip or port is empty");
         return -1;
@@ -248,4 +248,71 @@ ssize_t x_send(int s, const void* buf, size_t len, int flags)
         start += req.data.comp_len;
     }
     return send_size;
+}
+
+ssize_t x_recv(int s, void* buf, size_t len, int flags)
+{
+    if (!buf || !len)
+    {
+        dbg_error(DBG_SOCKET, "sendto failed, buf or len or src is null.");
+        return -1;
+    }
+    while(1)
+    {
+        sock_req_t req;
+        req.wait = (sock_wait_t*)0;
+        req.wait_tmo = 0;
+        req.sockfd = s;
+        req.data.buf = buf;
+        req.data.len = len;
+        req.data.flags = 0;
+        req.data.comp_len = 0;
+
+        net_err_t err = exmsg_func_exec(sock_recv_req_in, &req);
+        if (err < 0)
+        {
+            dbg_ERROR(DBG_SOCKET, "create socket failed.");
+            return -1;
+        }
+
+        if (req.data.comp_len)
+            return (ssize_t)req.data.comp_len;
+
+        err = sock_wait_enter(req.wait, req.wait_tmo);
+        if (err < 0)
+        {
+            dbg_error(DBG_SOCKET, "recv failed");
+            return -1;
+        }
+    }
+}
+
+int x_bind(int s, const struct x_sockaddr* src, x_socklen_t len)
+{
+    if (len != sizeof(struct x_sockaddr) || !src)
+    {
+        dbg_error(DBG_SOCKET, "socket connect addr error");
+        return -1;
+    }
+
+    if (src->sin_family != AF_INET)
+    {
+        dbg_error(DBG_SOCKET, "socket connect addr family error");
+        return -1;
+    }
+
+    const struct x_sockaddr_in* addr_in = (const struct x_sockaddr_in*)src;
+    if ((addr_in->sin_addr.s_addr == INADDR_ANY) || !addr_in->sin_port)
+    {
+        dbg_error(DBG_SOCKET, "ip or port is empty");
+        return -1;
+    }
+
+    sock_req_t req;
+    req.wait = (sock_wait_t*)0;
+    req.sockfd = s;
+    req.conn.addr = src;
+    req.conn.addrlen = len;
+
+    return exmsg_func_exec(sock_bind_req_in, &req);
 }

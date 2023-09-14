@@ -6,6 +6,7 @@
 #include "raw.h"
 #include "udp.h"
 #include "tools.h"
+#include "ipv4.h"
 
 #define SOCKET_MAX_NR   10
 static x_socket_t socket_tbl[SOCKET_MAX_NR];
@@ -456,6 +457,57 @@ net_err_t sock_send_req_in (struct _func_msg_t* msg)
     return err;
 }
 
+net_err_t sock_bind_req_in (struct _func_msg_t* msg)
+{
+    sock_req_t* req = (sock_req_t*)msg->param;
+    x_socket_t* s = get_socket(req->sockfd);
+
+    if (!s)
+    {
+        dbg_error(DBG_SOCKET, "param error");
+        return NET_ERR_PARAM;
+    }
+
+    sock_t* sock = s->sock;
+    sock_bind_t* bind = &req->bind;
+
+    if (!sock->ops->bind)
+    {
+        dbg_error(DBG_SOCKET, "funtion not imp");
+        return NET_ERR_NOT_SUPPORT;
+    }
+
+    return sock->ops->bind(sock, bind->addr, bind->addrlen);
+}
+
+net_err_t sock_recv_req_in (struct _func_msg_t* msg)
+{
+    sock_req_t* req = (sock_req_t*)msg->param;
+    x_socket_t* s = get_socket(req->sockfd);
+    if (!s)
+    {
+        dbg_error(DBG_SOCKET, "param error");
+        return NET_ERR_PARAM;
+    }
+    sock_t* sock = s->sock;
+    sock_data_t* data = &req->data;
+
+    if (!sock->ops->recv)
+    {
+        dbg_error(DBG_SOCKET, "funtion not imp");
+        return NET_ERR_NOT_SUPPORT;
+    }
+
+    net_err_t err = sock->ops->recv(sock, data->buf, data->len, data->flags, &data->comp_len);
+    
+    if (err == NET_ERR_NEED_WAIT)
+    {
+        if (sock->recv_wait)
+            sock_wait_add(sock->recv_wait, sock->recv_tmo, req);
+    }
+    return err;
+}
+
 net_err_t sock_connect(sock_t * sock, const struct x_sockaddr* addr, x_socklen_t addrlen)
 {
     struct x_sockaddr_in* addr_in = (struct x_sockaddr_in*)addr;
@@ -472,5 +524,30 @@ net_err_t sock_send (struct _sock_t* s, const void* buf, size_t len, int flags, 
     ipaddr_to_buf(&s->remote_ip, addr.sin_addr.addr_array);
 
     s->ops->sendto(s, buf, len, flags, (const struct x_sockaddr*)&addr, sizeof(addr), result_len);
+    return NET_ERR_OK;
+}
+
+net_err_t sock_recv (struct _sock_t* s, void* buf, size_t len, int flags, ssize_t* result_len)
+{
+    struct x_sockaddr_in addr;
+    x_socklen_t socklen = sizeof(addr);
+
+    return s->ops->recvfrom(s, buf, len, flags, (struct x_sockaddr*)&addr, socklen, result_len);
+}
+
+net_err_t sock_bind(sock_t * sock, const struct x_sockaddr* addr, x_socklen_t addrlen)
+{
+    struct x_sockaddr_in* addr_in = (struct x_sockaddr_in*)addr;
+    ipaddr_t ipaddr;
+    ipaddr_from_buf(&ipaddr, addr_in->sin_addr.addr_array);
+    rentry_t* rt = rt_find(&ipaddr);
+    if (!rt && (!ipaddr_is_equal(&rt->netif->ipaddr, &ipaddr)))
+    {
+        dbg_error(DBG_SOCKET, "Description The provided ipaddr cannot be found on the interface");
+        return NET_ERR_NOT_SUPPORT;
+    }
+
+    ipaddr_copy(&sock->local_ip, &ipaddr);
+    sock->local_port = x_ntohs(addr_in->sin_port);
     return NET_ERR_OK;
 }

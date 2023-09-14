@@ -10,20 +10,21 @@ static void udp_echo_server_thread (void *arg)
     int s = socket(AF_INET, SOCK_DGRAM, 0);
     if (s < 0)
     {
-        printf("opens ocket error\n");
+        printf("opens socket error\n");
         goto end;
     }
 
     struct sockaddr_in local_addr;
     local_addr.sin_family = AF_INET;
     local_addr.sin_port = htons(server_port);
-    local_addr.sin_addr.s_addr = htons(INADDR_ANY);
-    // 绑定本地端口
-    // if (bind(s, (struct sockaddr*)&local_addr, sizeof(local_addr)) < 0)
-    // {
-    //     printf("bind error\n");
-    //     goto end;
-    // }
+    //local_addr.sin_addr.s_addr = htons(INADDR_ANY);
+    local_addr.sin_addr.s_addr = inet_addr("192.168.74.2");
+    //绑定本地端口
+    if (bind(s, (struct sockaddr*)&local_addr, sizeof(local_addr)) < 0)
+    {
+        printf("bind error\n");
+        goto end;
+    }
 
     while (1)
     {
@@ -39,7 +40,7 @@ static void udp_echo_server_thread (void *arg)
         }
 
         // 由于打印调io比较耗时，所以udp包会因为来不及处理而被丢弃
-        plat_printf("udp echo server:connect ip: %s, port: %d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
+        //plat_printf("udp echo server:connect ip: %s, port: %d\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
     
         size = sendto(s, buf, size, 0, (struct sockaddr*)&client_addr, addr_len);
         if (size < 0)

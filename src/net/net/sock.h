@@ -28,8 +28,10 @@ typedef struct _sock_ops_t
     net_err_t (*sendto) (struct _sock_t* s, const void* buf, size_t len, int flags, const struct x_sockaddr* dest, x_socklen_t dest_len, ssize_t* result_len);
     net_err_t (*send) (struct _sock_t* s, const void* buf, size_t len, int flags, ssize_t* result_len);
     net_err_t (*recvfrom) (struct _sock_t* s, void* buf, size_t len, int flags, struct x_sockaddr* src, x_socklen_t src_len, ssize_t* result_len);
+    net_err_t (*recv) (struct _sock_t* s, void* buf, size_t len, int flags, ssize_t* result_len);
     net_err_t (*setopt) (struct _sock_t* s, int level, int optname, const char* optval, int optlen);
     net_err_t (*connect) (struct _sock_t* s, const struct x_sockaddr* dest, x_socklen_t dest_len);
+    net_err_t (*bind) (struct _sock_t* s, const struct x_sockaddr* dest, x_socklen_t dest_len);
     void (*destory) (struct _sock_t* s);
 }sock_ops_t;
 
@@ -95,6 +97,12 @@ typedef struct _sock_conn_t
     x_socklen_t addrlen;
 }sock_conn_t;
 
+typedef struct _sock_bind_t
+{
+    const struct x_sockaddr* addr;
+    x_socklen_t addrlen;
+}sock_bind_t;
+
 typedef struct _sock_req_t
 {
     sock_wait_t* wait;
@@ -107,6 +115,7 @@ typedef struct _sock_req_t
         sock_data_t data;
         sock_opt_t opt;
         sock_conn_t conn;
+        sock_bind_t bind;
     };
 }sock_req_t;
 
@@ -118,6 +127,8 @@ net_err_t sock_setsockopt_req_in (struct _func_msg_t* msg);
 net_err_t sock_close_req_in (struct _func_msg_t* msg);
 net_err_t sock_connect_req_in (struct _func_msg_t* msg);
 net_err_t sock_send_req_in (struct _func_msg_t* msg);
+net_err_t sock_recv_req_in (struct _func_msg_t* msg);
+net_err_t sock_bind_req_in (struct _func_msg_t* msg);
 net_err_t sock_setopt (struct _sock_t* s, int level, int optname, const char* optval, int len);
 net_err_t sock_init(sock_t* sock, int family, int protocol, const sock_ops_t* ops);
 net_err_t sock_wait_init (sock_wait_t* wait);
@@ -129,4 +140,6 @@ void sock_wakeup (sock_t* sock, int type, int err);
 void sock_uninit(sock_t* sock);
 net_err_t sock_connect(sock_t * sock, const struct x_sockaddr* addr, x_socklen_t addrlen);
 net_err_t sock_send (struct _sock_t* s, const void* buf, size_t len, int flags, ssize_t* result_len);
+net_err_t sock_recv (struct _sock_t* s, void* buf, size_t len, int flags, ssize_t* result_len);
+net_err_t sock_bind(sock_t * sock, const struct x_sockaddr* addr, x_socklen_t addrlen);
 #endif 

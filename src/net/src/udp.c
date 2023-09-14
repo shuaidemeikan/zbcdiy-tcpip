@@ -89,7 +89,7 @@ static udp_t* udp_find (ipaddr_t* src, uint16_t sport, ipaddr_t* dest, uint16_t 
         if (sock->local_port != sport)
             continue;
 
-        if (!sock->remote_port && (sock->remote_port != dport))
+        if (sock->remote_port && (sock->remote_port != dport))
             continue;
 
         if (!ipaddr_is_any(&sock->local_ip) && !ipaddr_is_equal(&sock->local_ip, src))
@@ -194,7 +194,7 @@ static net_err_t udp_recvfrom (struct _sock_t* s, void* buf, size_t len, int fla
     struct x_sockaddr_in* addr = (struct x_sockaddr_in*)dest;
     plat_memset(addr, 0, sizeof(struct x_sockaddr_in));
     addr->sin_family = AF_INET;
-    addr->sin_port = from->port;
+    addr->sin_port = x_htons(from->port);
     ipaddr_to_buf(&from->from, addr->sin_addr.addr_array);
     pktbuf_remove_header(pktbuf, sizeof(udp_from_t));
 
@@ -244,6 +244,36 @@ net_err_t udp_connect (struct _sock_t* s, const struct x_sockaddr* dest, x_sockl
     return NET_ERR_OK;
 }
 
+net_err_t udp_bind (struct _sock_t* s, const struct x_sockaddr* dest, x_socklen_t dest_len)
+{
+    // 参数合法性检测
+    struct x_sockaddr_in* addr = (struct x_sockaddr_in*)dest;
+    if (s->local_port)
+    {
+        dbg_error(DBG_UDP, "socker local port is already");
+        return NET_ERR_BINDED;
+    }
+
+    int port = x_ntohs(addr->sin_port);
+    ipaddr_t ipaddr;
+    ipaddr_from_buf(&ipaddr, addr->sin_addr.addr_array);
+
+    nlist_node_t* node;
+    nlist_for_each(node, &udp_list){
+        udp_t* udp = (udp_t*)nlist_entry(node, sock_t, node);
+        if ((sock_t*)udp == s) 
+            continue;
+
+        if (udp->base.remote_port == addr->sin_port)
+        {
+            dbg_error(DBG_UDP, "socker remote port is already binded");
+            return NET_ERR_BINDED;
+        }   
+    }
+
+    return sock_bind(s, dest, dest_len);
+}
+
 sock_t* udp_create (int family, int protocol)
 {
     // 创建用于udp操作的函数
@@ -254,6 +284,8 @@ sock_t* udp_create (int family, int protocol)
         .close = udp_close,
         .connect = udp_connect,
         .send = sock_send,
+        .recv = sock_recv,
+        .bind = udp_bind,
     };
 
     // 申请一个udp结构

@@ -33,8 +33,8 @@ int udp_echo_client_start (const char* ip, int port)
         
         size_t total_len = strlen(buf);
 
-        ssize_t size = send(s, buf, total_len, 0);
-        //ssize_t size = sendto(s, buf, total_len, 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
+        //ssize_t size = send(s, buf, total_len, 0);
+        ssize_t size = sendto(s, buf, total_len, 0, (struct sockaddr*)&server_addr, sizeof(server_addr));
         if (size < 0)
         {
             printf("sendto error");
@@ -47,7 +47,8 @@ int udp_echo_client_start (const char* ip, int port)
 #else
         struct sockaddr_in remote_addr;
         int addr_len = sizeof(remote_addr);
-        size = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr*)&remote_addr, &addr_len);
+        //size = recvfrom(s, buf, sizeof(buf), 0, (struct sockaddr*)&remote_addr, &addr_len);
+        size = recv(s, buf, sizeof(buf), 0);
 #endif
         if (size < 0)
         {

@@ -72,9 +72,9 @@ static raw_t* sock_find (ipaddr_t* src, ipaddr_t* dest, int protocol)
         // 如果不为空，那就比较一下是否一致，下面是三个都是这样
         if (raw->base.protocol && (raw->base.protocol != protocol))
             continue;
-        if (!ipaddr_is_any(&raw->base.local_ip) && !ipaddr_is_equal(&raw->base.local_ip, src))
+        if (!ipaddr_is_any(&raw->base.local_ip) && !ipaddr_is_equal(&raw->base.local_ip, dest))
             continue;
-        if (!ipaddr_is_any(&raw->base.remote_ip) && !ipaddr_is_equal(&raw->base.remote_ip, dest))
+        if (!ipaddr_is_any(&raw->base.remote_ip) && !ipaddr_is_equal(&raw->base.remote_ip, src))
             continue;
         
         return raw;
@@ -233,6 +233,9 @@ sock_t* raw_create (int family, int protocol)
         .recvfrom = raw_recvfrom,
         .close = raw_close,
         .setopt = sock_setopt,
+        .connect = sock_connect,
+        .recv = sock_recv,
+        .send = sock_send,
     };
 
     // 申请一个rwa
