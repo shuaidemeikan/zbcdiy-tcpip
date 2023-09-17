@@ -7,6 +7,7 @@
 #include "timer.h"
 #include "raw.h"
 #include "udp.h"
+#include "tcp_in.h"
 
 static uint16_t packet_id = 0;
 
@@ -518,7 +519,15 @@ net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t
         }
         break;
     case NET_PROTOCOL_TCP:
-        break;
+        pktbuf_remove_header(buf, sizeof(ipv4_hdr_t));
+
+        err = tcp_in(buf, src_ip, dest_ip);
+        if (err < 0)
+        {
+            dbg_warning(DBG_IP, "tcp in error");
+            return err;
+        }
+        return NET_ERR_OK;
     default:
     // 不是tcp，不是udp， 不是icmp，那就是一些莫名其妙的协议会跑到这，理论上永远不会跑到这
         dbg_warning(DBG_IP, "unknown protocol %d, drop it.\n", pkt->hdr.protocol);

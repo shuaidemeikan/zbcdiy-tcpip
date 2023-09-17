@@ -37,9 +37,8 @@ static void display_udp_list (void)
 }
 
 #else
-
 #define display_udp_packet(packet)
-#define static void display_udp_list ()
+#define display_udp_list()
 #endif
 
 net_err_t udp_init(void)

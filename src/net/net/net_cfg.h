@@ -19,7 +19,8 @@
 #define DBG_ICMPv4      DBG_LEVEL_ERROR
 #define DBG_SOCKET      DBG_LEVEL_ERROR
 #define DBG_RAW         DBG_LEVEL_ERROR
-#define DBG_UDP         DBG_LEVEL_INFO
+#define DBG_UDP         DBG_LEVEL_ERROR
+#define DBG_TCP         DBG_LEVEL_INFO
 
 #define NET_ENDIAN_LITTLE           1
 
@@ -61,4 +62,6 @@
 #define UDP_MAX_RECV            50
 #define NET_PORT_DYN_START      1024
 #define NET_PORT_DYN_END        65535
+
+#define TCP_MAX_NR              30
 #endif // !NET_CFG_H
