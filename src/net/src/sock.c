@@ -7,6 +7,7 @@
 #include "udp.h"
 #include "tools.h"
 #include "ipv4.h"
+#include "tcp.h"
 
 #define SOCKET_MAX_NR   10
 static x_socket_t socket_tbl[SOCKET_MAX_NR];
@@ -221,6 +222,7 @@ net_err_t sock_create_req_in (struct _func_msg_t* msg)
     }sock_tbl[] = {
         [SOCK_RAW] = {.protocol = IPPROTP_ICMP, .create = raw_create,},
         [SOCK_DGRAM] = {.protocol = IPPROTO_UDP, .create = udp_create,},
+        [SOCK_STREAM] = {.protocol = IPPROTO_TCP, .create = tcp_create,},
     };
 
     // 解析一下参数
@@ -420,8 +422,8 @@ net_err_t sock_connect_req_in (struct _func_msg_t* msg)
     
     if (err == NET_ERR_NEED_WAIT)
     {
-        if (sock->recv_wait)
-            sock_wait_add(sock->recv_wait, sock->recv_tmo, req);
+        if (sock->conn_wait)
+            sock_wait_add(sock->conn_wait, sock->recv_tmo, req);
     }
     return err;
 }

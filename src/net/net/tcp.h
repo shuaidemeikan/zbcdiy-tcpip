@@ -1,4 +1,4 @@
-#ifndef TCP_H
+﻿#ifndef TCP_H
 #define TCP_H
 
 #include "sock.h"
@@ -6,6 +6,7 @@
 #include "pktbuf.h"
 #include "tools.h"
 #include "protocol.h"
+#include "socket.h"
 
 #pragma pack(1)
 typedef struct _tcp_hdr_t
@@ -75,10 +76,53 @@ typedef struct _tcp_seg_t
     uint32_t seq_len;
 }tcp_seg_t;
 
+typedef enum _tcp_state_t {
+    TCP_STATE_FREE = 0,             // 空闲状态，非标准状态的一部分
+    TCP_STATE_CLOSED,
+    TCP_STATE_LISTEN,
+    TCP_STATE_SYN_SENT,
+    TCP_STATE_SYN_RECVD,
+    TCP_STATE_ESTABLISHED,
+    TCP_STATE_FIN_WAIT_1,
+    TCP_STATE_FIN_WAIT_2,
+    TCP_STATE_CLOSING,
+    TCP_STATE_TIME_WAIT,
+    TCP_STATE_CLOSE_WAIT,
+    TCP_STATE_LAST_ACK,
+
+    TCP_STATE_MAX,
+}tcp_state_t;
+
 typedef struct _tcp_t
 {
     sock_t base;
 
+    tcp_state_t state;
+    struct
+    {
+        uint32_t syn_out;
+    }flags;
+
+    struct
+    {
+        sock_wait_t wait;
+    }conn;
+
+    struct
+    {
+        uint32_t una;                   // 已发送但未确认区域的起始序号
+        uint32_t nxt;                   // 未发送的起始序号
+        uint32_t iss;                   // 起始发送序号
+        sock_wait_t wait;
+    }snd;
+
+    struct 
+    {
+        uint32_t nxt;                   // 下一个期望接收的序号
+        uint32_t iss;                   // 起始接收序号
+        sock_wait_t wait;
+    }rcv;
+    
 }tcp_t;
 
 static inline uint16_t tcp_hdr_size (tcp_hdr_t* tcp)
@@ -93,5 +137,15 @@ static inline void tcp_set_hdr_size (tcp_hdr_t* tcp, int size)
 
 net_err_t tcp_init(void);
 sock_t* tcp_create (int family, int protocol);
+
+#if DBG_DISP_ENABLED(DBG_TCP)       // 注意头文件要包含dbg.h和net_cfg.h
+void tcp_show_info (char * msg, tcp_t * tcp);
+void tcp_display_pkt (char * msg, tcp_hdr_t * tcp_hdr, pktbuf_t * buf);
+void tcp_show_list (void);
+#else
+#define tcp_show_info(msg, tcp)
+#define tcp_display_pkt(msg, hdr, buf)
+#define tcp_show_list()
+#endif
 
 #endif

@@ -16,6 +16,8 @@
 #include "exmsg.h"
 #include "echo\udp_echo_client.h"
 #include "echo\udp_echo_server.h"
+#include "echo\tcp_echo_client.h"
+#include "echo\tcp_echo_server.h"
 
 pcap_data_t netdev0_data = {.ip = netdev0_phy_ip, .hwaddr = netdev0_hwaddr};
 net_err_t netdev_init()
@@ -284,6 +286,8 @@ int main (void) {
 	
 	//udp_echo_server_start(1000);
 	//udp_echo_client_start("192.168.74.3", 4567);
+	tcp_echo_client_start("192.168.74.3", 4567);
+
 	basic_test();
 
 	ping_t p;

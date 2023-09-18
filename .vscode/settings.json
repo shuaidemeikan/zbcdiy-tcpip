@@ -72,7 +72,8 @@
         "icmpv4.h": "c",
         "string.h": "c",
         "udp.h": "c",
-        "xstring": "c"
+        "xstring": "c",
+        "tcp_state.h": "c"
     },
     "C_Cpp.errorSquiggles": "Disabled",
     "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools"

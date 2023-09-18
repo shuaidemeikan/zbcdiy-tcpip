@@ -207,6 +207,12 @@ int x_connect(int sockfd, const struct x_sockaddr* addr, x_socklen_t len)
         return -1;
     }
 
+    if (req.wait && ((err = sock_wait_enter(req.wait, req.wait_tmo)) < 0))
+    {
+        dbg_error(DBG_SOCKET, "recv failed");
+        return -1;
+    }
+
     return 0;
 }
 

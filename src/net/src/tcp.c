@@ -1,11 +1,80 @@
 #include "tcp.h"
 #include "debug.h"
 #include "mblock.h"
+#include "tcp_state.h"
 
 static tcp_t tcp_tbl[TCP_MAX_NR];
 static mblock_t tcp_mblock;
 static nlist_t tcp_list;
 
+#if DBG_DISP_ENABLED(DBG_TCP)
+void tcp_show_info (char * msg, tcp_t * tcp) {
+    plat_printf("%s\n", msg);
+    plat_printf("    local port: %u, remote port: %u\n", tcp->base.local_port, tcp->base.remote_port);
+}
+
+void tcp_display_pkt (char * msg, tcp_hdr_t * tcp_hdr, pktbuf_t * buf) {
+    plat_printf("%s\n", msg);
+    plat_printf("    sport: %u, dport: %u\n", tcp_hdr->sport, tcp_hdr->dport);
+    plat_printf("    seq: %u, ack: %u, win: %d\n", tcp_hdr->seq, tcp_hdr->ack, tcp_hdr->win);
+    plat_printf("    flags:");
+    if (tcp_hdr->f_syn) {
+        plat_printf(" syn");
+    }
+    if (tcp_hdr->f_rst) {
+        plat_printf(" rst");
+    }
+    if (tcp_hdr->f_ack) {
+        plat_printf(" ack");
+    }
+    if (tcp_hdr->f_psh) {
+        plat_printf(" push");
+    }
+    if (tcp_hdr->f_fin) {
+        plat_printf(" fin");
+    }
+
+    plat_printf("\n    len=%d", buf->total_size - tcp_hdr_size(tcp_hdr));
+    plat_printf("\n");
+}
+
+void tcp_show_list (void) {
+    char idbuf[10];
+    int i = 0;
+
+    plat_printf("-------- tcp list -----\n");
+
+    nlist_node_t * node;
+    nlist_for_each(node, &tcp_list) {
+        tcp_t * tcp = (tcp_t *)nlist_entry(node, sock_t, node);
+
+        plat_memset(idbuf, 0, sizeof(idbuf));
+        plat_printf(idbuf, "%d:", i++);
+        tcp_show_info(idbuf, tcp);
+    }
+}
+#endif
+
+static int tcp_alloc_port(void)
+{
+    static int port = 1024;
+    for (; port < 65535; port++)
+    {
+        nlist_node_t * node;
+        nlist_for_each(node, &tcp_list)
+        {
+            tcp_t * tcp = (tcp_t *)nlist_entry(node, sock_t, node);
+            if (tcp->base.remote_port == port)
+                port++;
+            else
+            {
+                port++;
+                return port;
+            }
+        }
+    }
+    return -1;
+}
 
 net_err_t tcp_init(void)
 {
@@ -29,9 +98,72 @@ tcp_t* tcp_get_free(int wait)
     return tcp;
 }
 
+static uint32_t tcp_get_iss(void)
+{
+    static uint32_t iss = 0;
+    return ++iss;
+}
+
+static net_err_t tcp_init_connect (tcp_t* tcp)
+{
+    tcp->snd.iss = tcp_get_iss();
+    tcp->snd.una = tcp->snd.nxt = tcp->snd.iss;
+    
+    tcp->rcv.nxt = 0;
+    return NET_ERR_OK;
+}
+
+net_err_t tcp_connect (struct _sock_t* s, const struct x_sockaddr* dest, x_socklen_t dest_len)
+{
+    tcp_t* tcp = (tcp_t*)s;
+    if (tcp->state != TCP_STATE_CLOSED)
+    {
+        dbg_error(DBG_TCP, "tcp connect failed, state is not closed.");
+        return NET_ERR_STATE;
+    }
+
+    const struct x_sockaddr_in* addr = (const struct x_sockaddr_in*)dest;
+    ipaddr_from_buf(&s->remote_ip, (uint8_t*)&addr->sin_addr.s_addr);
+
+    if (s->local_port == NET_PORT_EMPTY)
+    {
+        int port = tcp_alloc_port();
+        if (port == -1)
+        {
+            dbg_error(DBG_TCP, "tcp_alloc_port failed.");
+            return NET_ERR_NONE; 
+        }
+        s->local_port = port;
+    }
+
+    net_err_t err;
+    if (err = tcp_init_connect((tcp_t*)s) < 0)
+    {
+        dbg_error(DBG_TCP, "tcp_init_connect failed.");
+        return err;
+    }
+
+    if ((err = tcp_send_syn((tcp_t*)s)) < 0)
+    {
+        dbg_error(DBG_TCP, "send syn failed");
+        return err;
+    }
+
+    tcp_set_state((tcp_t*)s, TCP_STATE_SYN_SENT);
+    return NET_ERR_NEED_WAIT;
+}
+
+net_err_t tcp_close (struct _sock_t* s)
+{
+    return NET_ERR_OK;
+}
+
 tcp_t* tcp_alloc(int tmo, int family, int protocol)
 {
-    static const sock_ops_t tcp_ops;
+    static const sock_ops_t tcp_ops = {
+        .connect = tcp_connect,
+        .close = tcp_close,
+    };
 
     tcp_t* tcp = tcp_get_free(tmo);
     if (!tcp)
@@ -48,7 +180,41 @@ tcp_t* tcp_alloc(int tmo, int family, int protocol)
         return (tcp_t*)0;
     }
 
+    if (sock_wait_init(&tcp->conn.wait) < 0)
+    {
+        dbg_error(DBG_TCP, "sock wait init failed.");
+        goto alloc_failed;
+    }
+    tcp->base.conn_wait = &tcp->conn.wait;
+
+    if (sock_wait_init(&tcp->snd.wait) < 0)
+    {
+        dbg_error(DBG_TCP, "sock wait init failed.");
+        goto alloc_failed;
+    }
+    tcp->base.send_wait = &tcp->snd.wait;
+
+    if (sock_wait_init(&tcp->rcv.wait) < 0)
+    {
+        dbg_error(DBG_TCP, "sock wait init failed.");
+        goto alloc_failed;
+    }
+    tcp->base.recv_wait = &tcp->rcv.wait;
+
+    tcp_set_state(tcp, TCP_STATE_CLOSED);
+
     return tcp;
+
+alloc_failed:
+    if (tcp->base.conn_wait)
+        sock_wait_destory(tcp->base.conn_wait);
+    if (tcp->base.send_wait)
+        sock_wait_destory(tcp->base.send_wait);
+    if (tcp->base.recv_wait)
+        sock_wait_destory(tcp->base.recv_wait);
+    
+    mblock_free(&tcp_mblock, tcp);
+    return (tcp_t*)0;
 }
 
 static inline void tcp_insert(tcp_t* tcp)

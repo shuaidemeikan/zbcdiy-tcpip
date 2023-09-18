@@ -12,11 +12,7 @@ int tcp_echo_client_start (const char* ip, int port) {
     plat_printf("Enter quit to exit\n");
 
     // 创建套接字，使用流式传输，即tcp
-#if defined(SYS_PLAT_WINDOWS)
     int s = socket(AF_INET, SOCK_STREAM, 0);
-#else
-    int s = socket(AF_INET, SOCK_STREAM, 0);
-#endif
     if (s < 0) {
         plat_printf("tcp echo client: open socket error");
         goto end;
@@ -32,6 +28,11 @@ int tcp_echo_client_start (const char* ip, int port) {
         plat_printf("connect error");
         goto end;
     }
+
+    char sbuf[128];
+    fgets(sbuf, sizeof(sbuf), stdin);
+    close(s);
+    return 0;
 
     // 循环，读取一行后发出去
     char buf[128];

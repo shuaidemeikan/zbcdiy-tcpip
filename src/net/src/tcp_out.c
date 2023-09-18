@@ -1,4 +1,4 @@
-#include "tcp_out.h"
+﻿#include "tcp_out.h"
 #include "ipv4.h"
 
 static net_err_t send_out(tcp_hdr_t* out, pktbuf_t* buf, ipaddr_t* remote_ip, ipaddr_t* local_ip)
@@ -14,7 +14,7 @@ static net_err_t send_out(tcp_hdr_t* out, pktbuf_t* buf, ipaddr_t* remote_ip, ip
 
     net_err_t err = ipv4_out(NET_PROTOCOL_TCP, remote_ip, local_ip, buf);
     if (err < 0)
-    {
+    { 
         dbg_warning(DBG_TCP, "ipv4_out failed");
         pktbuf_free(buf);
     }
@@ -36,9 +36,53 @@ net_err_t tcp_send_reset(tcp_seg_t* seg)
     out->sport = in->dport;
     out->dport = in->sport;
     out->flags = 0;
-    out->ack = 1;
+    out->f_rst = 1;
     tcp_set_hdr_size(out, sizeof(tcp_hdr_t));
 
+    if (in->f_ack)
+    {
+        // 说明连接已经成功建立了
+        out->seq = in->ack;
+        out->ack = 0;
+        out->f_ack = 0;
+    }else
+    {
+        out->ack = in->seq + seg->seq_len;
+    }
+
+    if (in->f_ack)
     out->win = out->urgptr = 0;
+    tcp_display_pkt("tcp out", out, buf);
     return send_out(out, buf, &seg->remote_ip, &seg->local_ip);
+}
+
+net_err_t tcp_transmit (tcp_t* tcp)
+{
+    pktbuf_t* buf = pktbuf_alloc(sizeof(tcp_hdr_t));
+    if (!buf)
+    {
+        dbg_error(DBG_TCP, "no pktbuf");
+        return NET_ERR_OK;
+    }
+
+    tcp_hdr_t* hdr = (tcp_hdr_t*)pktbuf_data(buf);
+    plat_memset(hdr, 0, sizeof(tcp_hdr_t));
+    hdr->sport = tcp->base.local_port;
+    hdr->dport = tcp->base.remote_port;
+    hdr->seq = tcp->snd.nxt;
+    hdr->ack = tcp->rcv.nxt;
+    hdr->flags = 0;
+    hdr->f_syn = tcp->flags.syn_out;
+    hdr->win = 1024;
+    tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
+
+    send_out(hdr, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
+
+}
+
+net_err_t tcp_send_syn(tcp_t* tcp)
+{
+    tcp->flags.syn_out = 1;
+    return tcp_transmit(tcp);
+    //return NET_ERR_OK;
 }
