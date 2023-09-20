@@ -348,6 +348,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net\socket.h" />
     <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net\sys.h" />
     <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net\tcp.h" />
+    <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net\tcp_buf.h" />
     <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net\tcp_in.h" />
     <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net\tcp_out.h" />
     <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net\tcp_state.h" />
@@ -374,6 +375,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\scoket.c" />
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\sock.c" />
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp.c" />
+    <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp_buf.c" />
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp_in.c" />
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp_out.c" />
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp_state.c" />

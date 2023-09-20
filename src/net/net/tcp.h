@@ -7,6 +7,7 @@
 #include "tools.h"
 #include "protocol.h"
 #include "socket.h"
+#include "tcp_buf.h"
 
 #pragma pack(1)
 typedef struct _tcp_hdr_t
@@ -112,6 +113,8 @@ typedef struct _tcp_t
 
     struct
     {
+        tcp_buf_t* buf;
+        uint8_t data[TCP_SBUF_SIZE];
         uint32_t una;                   // 已发送但未确认区域的起始序号
         uint32_t nxt;                   // 未发送的起始序号
         uint32_t iss;                   // 起始发送序号

@@ -24,6 +24,7 @@ C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\raw.c;C:\Users\11310\Desktop
 C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\scoket.c;C:\Users\11310\Desktop\开发\diy-tcpip\build\net.dir\Debug\scoket.obj
 C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\sock.c;C:\Users\11310\Desktop\开发\diy-tcpip\build\net.dir\Debug\sock.obj
 C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp.c;C:\Users\11310\Desktop\开发\diy-tcpip\build\net.dir\Debug\tcp.obj
+C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp_buf.c;C:\Users\11310\Desktop\开发\diy-tcpip\build\net.dir\Debug\tcp_buf.obj
 C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp_in.c;C:\Users\11310\Desktop\开发\diy-tcpip\build\net.dir\Debug\tcp_in.obj
 C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp_out.c;C:\Users\11310\Desktop\开发\diy-tcpip\build\net.dir\Debug\tcp_out.obj
 C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp_state.c;C:\Users\11310\Desktop\开发\diy-tcpip\build\net.dir\Debug\tcp_state.obj

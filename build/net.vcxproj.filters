@@ -79,6 +79,9 @@
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp_buf.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\src\tcp_in.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -193,6 +196,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net\tcp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net\tcp_buf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net\tcp_in.h">

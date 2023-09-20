@@ -64,4 +64,5 @@
 #define NET_PORT_DYN_END        65535
 
 #define TCP_MAX_NR              30
+#define TCP_SBUF_SIZE           1024
 #endif // !NET_CFG_H
