@@ -1,5 +1,6 @@
 #include "tcp_in.h"
 #include "tcp_out.h" 
+#include "tcp_state.h"
 
 void tcp_seg_init (tcp_seg_t* seg, pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
 {
@@ -15,6 +16,17 @@ void tcp_seg_init (tcp_seg_t* seg, pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
 
 net_err_t tcp_in (pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
 {
+    static const tcp_state_proc tcp_state_proc[] = {
+        [TCP_STATE_CLOSED] = tcp_closed_in,
+        [TCP_STATE_SYN_SENT] = tcp_syn_sent_in,
+        [TCP_STATE_ESTABLISHED] = tcp_established_in,
+        [TCP_STATE_FIN_WAIT_1] = tcp_fin_wait_1_in,
+        [TCP_STATE_FIN_WAIT_2] = tcp_fin_wait_2_in,
+        [TCP_STATE_CLOSING] = tcp_closing_in,
+        [TCP_STATE_TIME_WAIT] = tcp_time_wait_in,
+        [TCP_STATE_CLOSE_WAIT] = tcp_close_wait_in,
+        [TCP_STATE_LAST_ACK] = tcp_last_ack_in,      
+    };
     tcp_hdr_t* tcp_hdr = (tcp_hdr_t*)pktbuf_data(buf);
     if (tcp_hdr->checksum)
     {
@@ -55,7 +67,17 @@ net_err_t tcp_in (pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
 
     tcp_seg_t seg;
     tcp_seg_init(&seg, buf, dest, src);
-    tcp_send_reset(&seg);
+    //tcp_send_reset(&seg);
+
+    tcp_t* tcp = tcp_find(dest, tcp_hdr->dport, src, tcp_hdr->sport);
+    if (!tcp)
+    {
+        dbg_info(DBG_TCP, "tcp connection not found");
+        tcp_send_reset(&seg);
+        pktbuf_free(buf);
+    }
+
+    tcp_state_proc[tcp->state](tcp, &seg);
 
     tcp_show_list();
     return NET_ERR_OK;

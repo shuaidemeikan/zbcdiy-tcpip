@@ -100,7 +100,8 @@ typedef struct _tcp_t
     tcp_state_t state;
     struct
     {
-        uint32_t syn_out;
+        uint32_t syn_out : 1;
+        uint32_t irs_valid : 1;
     }flags;
 
     struct
@@ -137,7 +138,8 @@ static inline void tcp_set_hdr_size (tcp_hdr_t* tcp, int size)
 
 net_err_t tcp_init(void);
 sock_t* tcp_create (int family, int protocol);
-
+tcp_t* tcp_find(ipaddr_t* dest, uint16_t dport, ipaddr_t* src, uint16_t sport);
+net_err_t tcp_abort (tcp_t* tcp, int err);
 #if DBG_DISP_ENABLED(DBG_TCP)       // 注意头文件要包含dbg.h和net_cfg.h
 void tcp_show_info (char * msg, tcp_t * tcp);
 void tcp_display_pkt (char * msg, tcp_hdr_t * tcp_hdr, pktbuf_t * buf);

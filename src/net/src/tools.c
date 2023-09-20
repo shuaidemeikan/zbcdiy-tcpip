@@ -43,7 +43,7 @@ uint16_t checksum_peso(const uint8_t * src_ip, const uint8_t* dest_ip, uint8_t p
     return sum;
 }
 
-uint16_t checksum16 (int offset, void * buf, uint16_t len, uint32_t pre_sum, int complement) {
+uint16_t checksum16 (uint32_t offset, void * buf, uint16_t len, uint32_t pre_sum, int complement) {
     uint16_t * curr_buf = (uint16_t *)buf;
     uint32_t checksum = pre_sum;
 

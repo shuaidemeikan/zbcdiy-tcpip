@@ -1,7 +1,9 @@
-#include "tcp.h"
+﻿#include "tcp.h"
 #include "debug.h"
 #include "mblock.h"
 #include "tcp_state.h"
+#include "tools.h"
+#include "tcp_out.h"
 
 static tcp_t tcp_tbl[TCP_MAX_NR];
 static mblock_t tcp_mblock;
@@ -54,6 +56,30 @@ void tcp_show_list (void) {
     }
 }
 #endif
+
+net_err_t tcp_abort (tcp_t* tcp, int err)
+{
+    tcp_set_state(tcp, TCP_STATE_CLOSED);
+    sock_wakeup(&tcp->base, SOCK_WAIT_ALL, err);        // 把该tcp上在等待的线程全部唤醒，让他们不要再等了，直接销毁
+    return NET_ERR_OK;
+}
+
+tcp_t* tcp_find(ipaddr_t* dest, uint16_t dport, ipaddr_t* src, uint16_t sport)
+{
+    nlist_node_t* node;
+    nlist_for_each(node, &tcp_list)
+    {
+        sock_t* sock = (sock_t*)nlist_entry(node, sock_t, node);
+        if (ipaddr_is_any(&sock->local_ip) && !ipaddr_is_equal(&sock->local_ip, dest))
+            continue;
+        if (!ipaddr_is_equal(&sock->remote_ip, src))
+            continue;
+        if (sock->local_port != dport && sock->remote_port != sport)
+            continue;
+        return (tcp_t*)sock;
+    }
+    return (tcp_t*)0;
+}
 
 static int tcp_alloc_port(void)
 {
@@ -124,6 +150,7 @@ net_err_t tcp_connect (struct _sock_t* s, const struct x_sockaddr* dest, x_sockl
 
     const struct x_sockaddr_in* addr = (const struct x_sockaddr_in*)dest;
     ipaddr_from_buf(&s->remote_ip, (uint8_t*)&addr->sin_addr.s_addr);
+    s->remote_port = x_ntohs(addr->sin_port);
 
     if (s->local_port == NET_PORT_EMPTY)
     {
@@ -134,6 +161,16 @@ net_err_t tcp_connect (struct _sock_t* s, const struct x_sockaddr* dest, x_sockl
             return NET_ERR_NONE; 
         }
         s->local_port = port;
+    }
+
+    if (ipaddr_is_any(&s->local_ip)) {
+        // 检查路径，看看是否能够到达目的地。不能达到返回错误
+        rentry_t * rt = rt_find(&s->remote_ip);
+        if (rt == (rentry_t*)0) {
+            dbg_error(DBG_TCP, "no route to dest");
+            return NET_ERR_UNREACH;
+        }
+        ipaddr_copy(&s->local_ip, &rt->netif->ipaddr);
     }
 
     net_err_t err;

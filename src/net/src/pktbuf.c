@@ -51,6 +51,7 @@ static inline int curr_blk_remain(pktbuf_t* buf)
         return 0;
     
     return (int)(block->data + block->size - buf->blk_offset);
+    //return (int)(buf->curr_blk->data + block->size - buf->blk_offset);
 }
 
 /**
@@ -695,8 +696,8 @@ void pktbuf_reset_acc(pktbuf_t * buf)
 {
     if (buf)
     {
-        buf->curr_blk = pktbuf_first_blk(buf);
         buf->pos = 0;
+        buf->curr_blk = pktbuf_first_blk(buf);
         buf->blk_offset = buf->curr_blk ? buf->curr_blk->data : (uint8_t *)0;
     }
     else
@@ -898,21 +899,26 @@ net_err_t pktbuf_fill (pktbuf_t * buf, uint8_t v, int size)
 
 uint16_t pktbuf_checksum16 (pktbuf_t * buf, int len, uint32_t pre_sum, int complement)
 {
-    dbg_assert(buf->res != 0, "buf ref == 0");
+    dbg_assert(buf->res != 0, "buf freed");
 
-    int remain_size = total_blk_remain(buf);  // buf.toal_size
+    // 从当前位置开始计算校验和
+    // 大小检查
+    int remain_size = total_blk_remain(buf);
     if (remain_size < len) {
-        dbg_warning(DBG_BUF, "size too big");
+        //dbg_WARNING(DBG_BUF, "size too big. sum size %d < remain size: %d", size, remain_size);
         return 0;
     }
 
+    // 不断简单16位累加数据区
     uint32_t sum = pre_sum;
     uint32_t offset = 0;
     while (len > 0) {
         int blk_size = curr_blk_remain(buf);
-        int curr_size = (blk_size > len) ? len : blk_size;
 
+        int curr_size = (blk_size > len ? len : blk_size);
         sum = checksum16(offset, buf->blk_offset, curr_size, sum, 0);
+
+        dbg_assert(buf->blk_offset + curr_size <= buf->curr_blk->data + PKTBUF_BLK_SIZE, "out bound");
 
         move_forward(buf, curr_size);
         len -= curr_size;
