@@ -21,7 +21,7 @@ typedef enum _net_err_t
     NET_ERR_CHECKSUM = -14,
     NET_ERR_BINDED = -15,
     NET_ERR_RESET = -16,
-    
+    NET_ERR_CLOSE = -17,
 }net_err_t;
 
 #endif

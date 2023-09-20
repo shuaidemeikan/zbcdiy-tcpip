@@ -57,6 +57,18 @@ void tcp_show_list (void) {
 }
 #endif
 
+void tcp_free(tcp_t* tcp)
+{
+    // 先释放sock内的锁结构
+    sock_wait_destory(&tcp->conn.wait);
+    sock_wait_destory(&tcp->snd.wait);
+    sock_wait_destory(&tcp->rcv.wait);
+
+    tcp->state = TCP_STATE_FREE;
+    nlist_remove(&tcp_list, &tcp->base.node);
+    mblock_free(&tcp_mblock, tcp);
+}
+
 net_err_t tcp_abort (tcp_t* tcp, int err)
 {
     tcp_set_state(tcp, TCP_STATE_CLOSED);
@@ -192,6 +204,36 @@ net_err_t tcp_connect (struct _sock_t* s, const struct x_sockaddr* dest, x_sockl
 
 net_err_t tcp_close (struct _sock_t* s)
 {
+    tcp_t* tcp = (tcp_t*)s;
+    dbg_info(DBG_TCP, "tcp_close");
+    
+    switch (tcp->state)
+    {
+    case TCP_STATE_CLOSED:
+        dbg_info(DBG_TCP, "tcp already closed");
+        tcp_free(tcp);
+        return NET_ERR_OK;
+
+    case TCP_STATE_SYN_RECVD:
+    case TCP_STATE_SYN_SENT:
+        tcp_abort(tcp, NET_ERR_CLOSE);
+        tcp_free(tcp);
+        return NET_ERR_OK;
+    
+    case TCP_STATE_ESTABLISHED:
+        break;
+
+    case TCP_STATE_CLOSE_WAIT:
+        tcp_send_fin(tcp); 
+        tcp_set_state(tcp, TCP_STATE_LAST_ACK);
+        return NET_ERR_NEED_WAIT;
+    
+    default:
+        dbg_error(DBG_TCP, "tcp_close: unknown state");
+        return NET_ERR_UNREACH;
+        break;
+    }
+
     return NET_ERR_OK;
 }
 

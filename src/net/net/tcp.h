@@ -101,6 +101,7 @@ typedef struct _tcp_t
     struct
     {
         uint32_t syn_out : 1;
+        uint32_t fin_out : 1;        // 需要发送FIN
         uint32_t irs_valid : 1;
     }flags;
 

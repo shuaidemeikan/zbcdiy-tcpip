@@ -86,6 +86,35 @@ net_err_t tcp_syn_sent_in(tcp_t *tcp, tcp_seg_t *seg)
 
 net_err_t tcp_established_in(tcp_t *tcp, tcp_seg_t *seg)
 {
+    tcp_hdr_t* tcp_hdr = seg->hdr;
+
+    // 检查rst位，判断收到的是不是rst报文
+    if (tcp_hdr->f_rst)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv rst packet");
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 检查syn位，如果发现有同样的四元组发syn报文，也直接断开
+    // 实际协议栈不是这么做的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
+    if (tcp_hdr->f_syn)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv syn packet");
+        tcp_send_reset(seg);
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 处理一下ack
+    if (tcp_ack_process(tcp, seg))
+    {
+        dbg_warning(DBG_TCP, "ack process failed");
+        return NET_ERR_UNREACH;
+    }
+
+    tcp_data_in(tcp, seg);
+    if (tcp_hdr->f_fin)
+        tcp_set_state(tcp, TCP_STATE_CLOSE_WAIT);
+
     return NET_ERR_OK;
 }
 

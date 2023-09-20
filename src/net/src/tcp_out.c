@@ -73,8 +73,13 @@ net_err_t tcp_transmit (tcp_t* tcp)
     hdr->ack = tcp->rcv.nxt;
     hdr->flags = 0;
     hdr->f_syn = tcp->flags.syn_out;
+    hdr->f_ack = tcp->flags.irs_valid;
     hdr->win = 1024;
     tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
+
+    if (tcp->flags.fin_out)
+        hdr->f_fin = 1;
+
     tcp->snd.nxt += hdr->f_syn + hdr->f_fin;
 
     return send_out(hdr, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
@@ -126,4 +131,11 @@ net_err_t tcp_send_ack(tcp_t* tcp, tcp_seg_t* seg)
     tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
 
     return send_out(hdr, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
+}
+
+net_err_t tcp_send_fin (tcp_t* tcp)
+{
+    tcp->flags.fin_out = 1;
+    tcp_transmit(tcp);
+    return NET_ERR_OK;
 }
