@@ -1,6 +1,6 @@
-^C:\USERS\11310\DESKTOP\开发\DIY-TCPIP\BUILD\CMAKEFILES\C9AEC2FD6B1A9D45600F69F08EA60000\GENERATE.STAMP.RULE
+^C:\USERS\ZBC\DESKTOP\开发\DIY-TCPIP-MASTER\CODE\START\BUILD\CMAKEFILES\31668E69D8B25525925212BFB5DD47A9\GENERATE.STAMP.RULE
 setlocal
-"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/11310/Desktop/开发/diy-tcpip -BC:/Users/11310/Desktop/开发/diy-tcpip/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/11310/Desktop/开发/diy-tcpip/build/net.sln
+"C:\Program Files (x86)\CMake\bin\cmake.exe" -SC:/Users/zbc/Desktop/开发/diy-tcpip-master/code/start -BC:/Users/zbc/Desktop/开发/diy-tcpip-master/code/start/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/zbc/Desktop/开发/diy-tcpip-master/code/start/build/net.sln
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone

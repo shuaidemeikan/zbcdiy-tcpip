@@ -1,5 +1,6 @@
 ﻿#include "tcp_state.h"
 #include "tcp_out.h"
+#include "tcp_in.h"
 
 const char * tcp_state_name (tcp_state_t state)
 {
@@ -25,9 +26,14 @@ const char * tcp_state_name (tcp_state_t state)
     
     return state_name[state];
 }
+
 void tcp_set_state (tcp_t * tcp, tcp_state_t state)
 {
     tcp->state = state;
+}
+
+void tcp_time_wait (tcp_t * tcp) {
+    tcp_set_state(tcp, TCP_STATE_TIME_WAIT);
 }
 
 net_err_t tcp_closed_in(tcp_t *tcp, tcp_seg_t *seg)
@@ -125,16 +131,105 @@ net_err_t tcp_close_wait_in (tcp_t * tcp, tcp_seg_t * seg)
 
 net_err_t tcp_last_ack_in (tcp_t * tcp, tcp_seg_t * seg)
 {
-    return NET_ERR_OK;
+    tcp_hdr_t* tcp_hdr = seg->hdr;
+
+    // 检查rst位，判断收到的是不是rst报文
+    if (tcp_hdr->f_rst)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv rst packet");
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 检查syn位，如果发现有同样的四元组发syn报文，也直接断开
+    // 实际协议栈不是这么做的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
+    if (tcp_hdr->f_syn)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv syn packet");
+        tcp_send_reset(seg);
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    if (tcp_ack_process(tcp, seg))
+    {
+        dbg_warning(DBG_TCP, "ack process failed");
+        return NET_ERR_UNREACH;
+    }
+
+    return tcp_abort(tcp, NET_ERR_CLOSE);
 }
 
 net_err_t tcp_fin_wait_1_in(tcp_t * tcp, tcp_seg_t * seg)
 {
+     tcp_hdr_t* tcp_hdr = seg->hdr;
+
+    // 检查rst位，判断收到的是不是rst报文
+    if (tcp_hdr->f_rst)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv rst packet");
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 检查syn位，如果发现有同样的四元组发syn报文，也直接断开
+    // 实际协议栈不是这么做的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
+    if (tcp_hdr->f_syn)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv syn packet");
+        tcp_send_reset(seg);
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 处理一下ack
+    if (tcp_ack_process(tcp, seg))
+    {
+        dbg_warning(DBG_TCP, "ack process failed");
+        return NET_ERR_UNREACH;
+    }
+
+    tcp_data_in(tcp, seg);
+    
+    if (tcp_hdr->f_fin)
+        // 如果fin=1，则代表同时收到了对方发的第一次挥手，直接进入timewait状态
+        tcp_time_wait(tcp);
+    else
+        // fin=0，又通过了种种检查，则说明对方回应了我方第一次挥手的包，进入wait2状态并等待下一个包
+        tcp_set_state(tcp, TCP_STATE_FIN_WAIT_2);
+
     return NET_ERR_OK;
 }
 
 net_err_t tcp_fin_wait_2_in(tcp_t * tcp, tcp_seg_t * seg)
 {
+    tcp_hdr_t* tcp_hdr = seg->hdr;
+
+    // 检查rst位，判断收到的是不是rst报文
+    if (tcp_hdr->f_rst)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv rst packet");
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 检查syn位，如果发现有同样的四元组发syn报文，也直接断开
+    // 实际协议栈不是这么做的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
+    if (tcp_hdr->f_syn)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv syn packet");
+        tcp_send_reset(seg);
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 处理一下ack
+    if (tcp_ack_process(tcp, seg))
+    {
+        dbg_warning(DBG_TCP, "ack process failed");
+        return NET_ERR_UNREACH;
+    }
+
+    tcp_data_in(tcp, seg);
+    // 到目前这个阶段，tcp只会处理rst和第三次挥手的包，其他的包一律丢弃
+    if (tcp_hdr->f_fin)
+        // 针对第三次挥手的包，需要发一个ack的回应，但是已经在tcp_data_in里发过了，所以直接进入timewait环境即可
+        tcp_time_wait(tcp);
+
     return NET_ERR_OK;
 }
 
@@ -145,6 +240,39 @@ net_err_t tcp_closing_in (tcp_t * tcp, tcp_seg_t * seg)
 
 net_err_t tcp_time_wait_in (tcp_t * tcp, tcp_seg_t * seg)
 {
+    tcp_hdr_t* tcp_hdr = seg->hdr;
+
+    // 检查rst位，判断收到的是不是rst报文
+    if (tcp_hdr->f_rst)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv rst packet");
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 检查syn位，如果发现有同样的四元组发syn报文，也直接断开
+    // 实际协议栈不是这么做的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
+    if (tcp_hdr->f_syn)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv syn packet");
+        tcp_send_reset(seg);
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 处理一下ack
+    if (tcp_ack_process(tcp, seg))
+    {
+        dbg_warning(DBG_TCP, "ack process failed");
+        return NET_ERR_UNREACH;
+    }
+
+    // 如果再收到fin=1的报文，就说明之前我方发的第四次挥手的包对端没收到
+    // 需要再发一次第四次挥手报文并重置timewait计时
+    if (tcp_hdr->f_fin)
+    {
+        tcp_send_ack(tcp, seg);
+        tcp_time_wait(tcp);
+    }
+
     return NET_ERR_OK;
 }
 

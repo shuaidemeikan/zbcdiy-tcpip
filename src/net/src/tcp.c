@@ -221,7 +221,9 @@ net_err_t tcp_close (struct _sock_t* s)
         return NET_ERR_OK;
     
     case TCP_STATE_ESTABLISHED:
-        break;
+        tcp_send_fin(tcp);
+        tcp_set_state(tcp, TCP_STATE_FIN_WAIT_1);
+        return NET_ERR_NEED_WAIT;
 
     case TCP_STATE_CLOSE_WAIT:
         tcp_send_fin(tcp); 
