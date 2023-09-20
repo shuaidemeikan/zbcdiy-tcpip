@@ -126,6 +126,31 @@ net_err_t tcp_established_in(tcp_t *tcp, tcp_seg_t *seg)
 
 net_err_t tcp_close_wait_in (tcp_t * tcp, tcp_seg_t * seg)
 {
+        tcp_hdr_t* tcp_hdr = seg->hdr;
+
+    // 检查rst位，判断收到的是不是rst报文
+    if (tcp_hdr->f_rst)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv rst packet");
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 检查syn位，如果发现有同样的四元组发syn报文，也直接断开
+    // 实际协议栈不是这么做的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
+    if (tcp_hdr->f_syn)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv syn packet");
+        tcp_send_reset(seg);
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 处理一下ack
+    if (tcp_ack_process(tcp, seg))
+    {
+        dbg_warning(DBG_TCP, "ack process failed");
+        return NET_ERR_UNREACH;
+    }
+
     return NET_ERR_OK;
 }
 
@@ -186,13 +211,19 @@ net_err_t tcp_fin_wait_1_in(tcp_t * tcp, tcp_seg_t * seg)
     }
 
     tcp_data_in(tcp, seg);
-    
-    if (tcp_hdr->f_fin)
+    if (tcp->flags.fin_out == 0)
+    {
+        if (tcp_hdr->f_fin)
         // 如果fin=1，则代表同时收到了对方发的第一次挥手，直接进入timewait状态
-        tcp_time_wait(tcp);
-    else
-        // fin=0，又通过了种种检查，则说明对方回应了我方第一次挥手的包，进入wait2状态并等待下一个包
-        tcp_set_state(tcp, TCP_STATE_FIN_WAIT_2);
+            tcp_time_wait(tcp);
+        else
+            // fin=0，又通过了种种检查，则说明对方回应了我方第一次挥手的包，进入wait2状态并等待下一个包
+            tcp_set_state(tcp, TCP_STATE_FIN_WAIT_2);
+    }else
+    {
+        tcp_set_state(tcp, TCP_STATE_CLOSING);
+    }
+    
 
     return NET_ERR_OK;
 }
@@ -235,6 +266,36 @@ net_err_t tcp_fin_wait_2_in(tcp_t * tcp, tcp_seg_t * seg)
 
 net_err_t tcp_closing_in (tcp_t * tcp, tcp_seg_t * seg)
 {
+    tcp_hdr_t* tcp_hdr = seg->hdr;
+
+    // 检查rst位，判断收到的是不是rst报文
+    if (tcp_hdr->f_rst)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv rst packet");
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 检查syn位，如果发现有同样的四元组发syn报文，也直接断开
+    // 实际协议栈不是这么做的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
+    if (tcp_hdr->f_syn)
+    {
+        dbg_warning(DBG_TCP, "tcp state established recv syn packet");
+        tcp_send_reset(seg);
+        return tcp_abort(tcp, NET_ERR_RESET);
+    }
+
+    // 处理一下ack
+    if (tcp_ack_process(tcp, seg))
+    {
+        dbg_warning(DBG_TCP, "ack process failed");
+        return NET_ERR_UNREACH;
+    }
+
+    if (tcp->flags.fin_out == 0)
+    {
+        tcp_time_wait(tcp);
+    }
+
     return NET_ERR_OK;
 }
 
@@ -250,7 +311,7 @@ net_err_t tcp_time_wait_in (tcp_t * tcp, tcp_seg_t * seg)
     }
 
     // 检查syn位，如果发现有同样的四元组发syn报文，也直接断开
-    // 实际协议栈不是这么做的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
+    // 实际协议不是这么要求的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
     if (tcp_hdr->f_syn)
     {
         dbg_warning(DBG_TCP, "tcp state established recv syn packet");

@@ -77,6 +77,7 @@ net_err_t tcp_in (pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
         pktbuf_free(buf);
     }
 
+
     tcp_state_proc[tcp->state](tcp, &seg);
 
     tcp_show_list();

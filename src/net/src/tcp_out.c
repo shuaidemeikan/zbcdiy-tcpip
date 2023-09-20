@@ -102,6 +102,9 @@ net_err_t tcp_ack_process (tcp_t* tcp, tcp_seg_t* seg)
         tcp->snd.una++;                     // 走到这里，说明发的第一个握手包已经被确认，让已接收的窗口+1
         tcp->flags.syn_out = 0;             // 握手包发送完毕，置位，新的状态已经在上层函数调整过了
     }
+
+    if (tcp->flags.fin_out && (tcp_hdr->ack - tcp->snd.una > 0))
+        tcp->flags.fin_out = 0;
     return NET_ERR_OK;
 }
 

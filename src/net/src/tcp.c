@@ -4,6 +4,7 @@
 #include "tcp_state.h"
 #include "tools.h"
 #include "tcp_out.h"
+#include "time.h"
 
 static tcp_t tcp_tbl[TCP_MAX_NR];
 static mblock_t tcp_mblock;
@@ -93,23 +94,42 @@ tcp_t* tcp_find(ipaddr_t* dest, uint16_t dport, ipaddr_t* src, uint16_t sport)
     return (tcp_t*)0;
 }
 
+// static int tcp_alloc_port(void)
+// {
+//     static int port = 1024;
+//     for (; port < 65535; port++)
+//     {
+//         nlist_node_t * node;
+//         nlist_for_each(node, &tcp_list)
+//         {
+//             tcp_t * tcp = (tcp_t *)nlist_entry(node, sock_t, node);
+//             if (tcp->base.remote_port == port)
+//                 port++;
+//             else
+//             {
+//                 port++;
+//                 return port;
+//             }
+//         }
+//     }
+//     return -1;
+// }
+
 static int tcp_alloc_port(void)
 {
-    static int port = 1024;
-    for (; port < 65535; port++)
+    int count = 0;
+    while (count < 1000)
     {
+        srand((unsigned int)time(NULL));
+	    int port = rand() % (1025 - 65534 + 1) + 65534;
         nlist_node_t * node;
         nlist_for_each(node, &tcp_list)
         {
             tcp_t * tcp = (tcp_t *)nlist_entry(node, sock_t, node);
-            if (tcp->base.remote_port == port)
-                port++;
-            else
-            {
-                port++;
+            if (tcp->base.remote_port != port)
                 return port;
-            }
         }
+        count++;
     }
     return -1;
 }

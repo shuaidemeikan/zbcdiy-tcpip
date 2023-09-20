@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/zbc/Desktop/开发/diy-tcpip-master/code/start
+# Install script for directory: C:/Users/11310/Desktop/开发/diy-tcpip
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/zbc/Desktop/开发/diy-tcpip-master/code/start/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/11310/Desktop/开发/diy-tcpip/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
