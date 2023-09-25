@@ -1,5 +1,17 @@
 ﻿#include "tcp_out.h"
 #include "ipv4.h"
+#include "tcp_buf.h"
+
+int tcp_write_sndbuf (tcp_t* tcp, const uint8_t* buf, int len)
+{
+    int free_cnt = tcp_buf_free_cnt(&tcp->snd.buf);
+    if (free_cnt < len)
+        return 0;
+    
+    int wr_len = (len > free_cnt) ? free_cnt : len;
+    tcp_buf_write_send(&tcp->snd.buf, buf, wr_len);
+    return wr_len;
+}
 
 static net_err_t send_out(tcp_hdr_t* out, pktbuf_t* buf, ipaddr_t* remote_ip, ipaddr_t* local_ip)
 {
@@ -56,6 +68,48 @@ net_err_t tcp_send_reset(tcp_seg_t* seg)
     return send_out(out, buf, &seg->remote_ip, &seg->local_ip);
 }
 
+/**
+ * @brief 获得tcp发送时的缓存相对偏移和发送长度
+ * 这一段比较绕，建议画个图看看
+ * @param tcp   待发送的tcp结构
+ * @param doff  buf内待发送的位置
+ * @param dlen  待发送的长度
+ * @return ** void 
+ */
+static void get_send_info (tcp_t* tcp, int* doff, int* dlen)
+{
+    // 非重发时，因为每确认一段，tcp就会从缓存中移除一段
+    // 所以目前tcp发送缓存中的第一个字节是tcp未确认的第一个字节
+    // 那么拿将要发送的字节减去未确认的第一个字节，就能得到将要发送的字节相对于发送缓存的相对偏移
+    *doff = tcp->snd.nxt - tcp->snd.una;
+    
+    // 发送的总长度是:缓存内有多少个数据-发送的偏移，目前没有管窗口大小问题
+    *dlen = tcp_buf_cnt(&tcp->snd.buf) - *doff;
+    if (*dlen == 0)
+        return;
+}
+
+static int copy_send_data (tcp_t* tcp, pktbuf_t* buf, int doff, int dlen)
+{
+    if (dlen == 0)
+        return 0;
+    
+    // 此时的pktbuf包头是填充好的，扩大一下包头用以填充数据
+    net_err_t err = pktbuf_resize(buf, (int)(buf->total_size + dlen));
+    if (err < 0)
+    {
+        dbg_error(DBG_TCP, "pktbuf resize error");
+        return -1;
+    }
+
+    // 定位到数据区域
+    int hdr_size = tcp_hdr_size((tcp_hdr_t*)pktbuf_data(buf));
+    pktbuf_reset_acc(buf);
+    pktbuf_seek(buf, hdr_size);
+    tcp_buf_read_send(&tcp->snd.buf, doff, buf, dlen);
+    return dlen;
+}
+
 net_err_t tcp_transmit (tcp_t* tcp)
 {
     pktbuf_t* buf = pktbuf_alloc(sizeof(tcp_hdr_t));
@@ -72,15 +126,22 @@ net_err_t tcp_transmit (tcp_t* tcp)
     hdr->seq = tcp->snd.nxt;
     hdr->ack = tcp->rcv.nxt;
     hdr->flags = 0;
-    hdr->f_syn = tcp->flags.syn_out;
-    hdr->f_ack = tcp->flags.irs_valid;
+    hdr->f_syn = tcp->flags.syn_out;                    // 判断是否在发送握手包
+    hdr->f_ack = tcp->flags.irs_valid;                  // 判断是否需要发送ack
     hdr->win = 1024;
     tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
 
     if (tcp->flags.fin_out)
         hdr->f_fin = 1;
 
-    tcp->snd.nxt += hdr->f_syn + hdr->f_fin;
+    int dlen, doff;
+    get_send_info(tcp, &doff, &dlen);
+    if (dlen < 0)
+        return NET_ERR_OK;
+
+    copy_send_data(tcp, buf, doff, dlen);
+
+    tcp->snd.nxt += hdr->f_syn + hdr->f_fin + dlen;
 
     return send_out(hdr, buf, &tcp->base.remote_ip, &tcp->base.local_ip);
 
@@ -93,6 +154,13 @@ net_err_t tcp_send_syn(tcp_t* tcp)
     //return NET_ERR_OK;
 }
 
+/**
+ * @brief 收到包时调用，处理握手和挥手时的标志位变化
+ * 再根据收到数据包的seq和ack，来判断收到的包中是否携带了数据，还是说是单纯的握手和挥手包
+ * @param tcp 
+ * @param seg 
+ * @return ** net_err_t 
+ */
 net_err_t tcp_ack_process (tcp_t* tcp, tcp_seg_t* seg)
 {
     tcp_hdr_t* tcp_hdr = seg->hdr;
@@ -101,6 +169,20 @@ net_err_t tcp_ack_process (tcp_t* tcp, tcp_seg_t* seg)
     {
         tcp->snd.una++;                     // 走到这里，说明发的第一个握手包已经被确认，让已接收的窗口+1
         tcp->flags.syn_out = 0;             // 握手包发送完毕，置位，新的状态已经在上层函数调整过了
+    }
+
+    int acked_cnt = tcp_hdr->ack - tcp->snd.una;                    // 收到的包确认的长度是该包内的ack减去tcp结构内存储的已发送未确认的数值
+    int unacked_cnt = tcp->snd.nxt - tcp->snd.una;                  // 此时tcp结构内已发送未确认的长度
+    int curr_acked = (acked_cnt > unacked_cnt) ? unacked_cnt : acked_cnt;   // 选取上面两者中较小的部分
+    // 如果收到的包是握手包，那么hdr的ack就会每次是+1，同时上面每次检测到tcp控制块处于syn_out状态时就会让una+1，所以acked_cnt就是0
+    // 挥手包则要复杂一些，挥手包可能携带数据(也可能是我多考虑了)，所以获得的curr_acked肯定是要大于0的，会在下面进行处理
+    // 总之，如果curr_acked>0，那么可以认为收到的数据包携带数据，不是单纯的握手包
+    if (curr_acked > 0)
+    {
+        // 把已确认的区域往后移一段
+        tcp->snd.una += curr_acked;
+        curr_acked -= tcp_buf_remove(&tcp->snd.buf, curr_acked);
+        // 如果是确认我方发送的
     }
 
     if (tcp->flags.fin_out && (tcp_hdr->ack - tcp->snd.una > 0))
@@ -129,7 +211,7 @@ net_err_t tcp_send_ack(tcp_t* tcp, tcp_seg_t* seg)
     hdr->ack = tcp->rcv.nxt;
     hdr->flags = 0;
     hdr->f_ack = 1;
-    hdr->win = 0;
+    hdr->win = 1024;
     hdr->urgptr = 0;
     tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
 

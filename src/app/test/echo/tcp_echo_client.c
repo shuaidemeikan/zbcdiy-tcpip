@@ -29,7 +29,21 @@ int tcp_echo_client_start (const char* ip, int port) {
         goto end;
     }
 
-    char sbuf[128];
+    char sbuf[1024];
+    for (int i = 0; i <= 1023; i++)
+        sbuf[i] = 'a' + i % 26;
+
+    for (int i = 0; i <= 1; i++)
+    {
+        ssize_t size = send(s, sbuf, sizeof(sbuf), 0);
+        if (size < 0)
+        {
+            printf("send error\n");
+            break;
+        }
+    }
+        
+
     fgets(sbuf, sizeof(sbuf), stdin);
     close(s);
     return 0;

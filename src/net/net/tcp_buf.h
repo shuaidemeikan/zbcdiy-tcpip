@@ -2,6 +2,8 @@
 #define TCP_BUF_H
 
 #include <stdint.h>
+#include "net_err.h"
+#include "pktbuf.h"
 
 typedef struct _tcp_sbuf_t
 {
@@ -28,4 +30,6 @@ static inline int tcp_buf_cnt (tcp_buf_t* buf)
     return buf->count;
 }
 
+void tcp_buf_write_send (tcp_buf_t* buf, const uint8_t* buffer, int len);
+void tcp_buf_read_send (tcp_buf_t* buf, int offset, pktbuf_t* dest, int count);
 #endif

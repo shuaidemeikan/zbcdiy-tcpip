@@ -101,9 +101,9 @@ typedef struct _tcp_t
     tcp_state_t state;
     struct
     {
-        uint32_t syn_out : 1;
+        uint32_t syn_out : 1;        // 输出syn标志位
         uint32_t fin_out : 1;        // 需要发送FIN
-        uint32_t irs_valid : 1;
+        uint32_t irs_valid : 1;      // 初始序列号irs不可用
     }flags;
 
     struct
@@ -113,7 +113,7 @@ typedef struct _tcp_t
 
     struct
     {
-        tcp_buf_t* buf;
+        tcp_buf_t buf;
         uint8_t data[TCP_SBUF_SIZE];
         uint32_t una;                   // 已发送但未确认区域的起始序号
         uint32_t nxt;                   // 未发送的起始序号

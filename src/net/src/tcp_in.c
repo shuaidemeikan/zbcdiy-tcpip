@@ -84,6 +84,14 @@ net_err_t tcp_in (pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
     return NET_ERR_OK;
 }
 
+/**
+ * @brief 目前作用是检查一下是否该发送fin包
+ * 如果要发送fin包，需要把snd的next指针往后移一位，然后唤醒所有等待的接口
+ * 如果不需要发送，那么说明来的是正常的数据，只唤醒等待读的接口就ok
+ * @param tcp 
+ * @param seg 
+ * @return ** net_err_t 
+ */
 net_err_t tcp_data_in (tcp_t* tcp, tcp_seg_t* seg)
 {
     int wakeup = 0;
