@@ -176,17 +176,20 @@ net_err_t tcp_ack_process (tcp_t* tcp, tcp_seg_t* seg)
     int curr_acked = (acked_cnt > unacked_cnt) ? unacked_cnt : acked_cnt;   // 选取上面两者中较小的部分
     // 如果收到的包是握手包，那么hdr的ack就会每次是+1，同时上面每次检测到tcp控制块处于syn_out状态时就会让una+1，所以acked_cnt就是0
     // 挥手包则要复杂一些，挥手包可能携带数据(也可能是我多考虑了)，所以获得的curr_acked肯定是要大于0的，会在下面进行处理
+    // 而这里对挥手包处理的方式仅仅是将fin_out置0(不是很能理解有什么意义，但是后续的判断也都是根据这个0进行的)
     // 总之，如果curr_acked>0，那么可以认为收到的数据包携带数据，不是单纯的握手包
     if (curr_acked > 0)
     {
         // 把已确认的区域往后移一段
         tcp->snd.una += curr_acked;
+        // 移除缓存中的已确认的数据
         curr_acked -= tcp_buf_remove(&tcp->snd.buf, curr_acked);
-        // 如果是确认我方发送的
+        // 如果curracked还有值，并且tcp控制块的fin_out位是1，才会进入，把fin_out置0，同上面所说，这不是很懂有什么意义
+        if (curr_acked && (tcp->flags.fin_out))
+            tcp->flags.fin_out = 0;
     }
 
-    if (tcp->flags.fin_out && (tcp_hdr->ack - tcp->snd.una > 0))
-        tcp->flags.fin_out = 0;
+    // 走到这里，不论如何都说明
     return NET_ERR_OK;
 }
 
