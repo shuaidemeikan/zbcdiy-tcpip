@@ -729,6 +729,7 @@ net_err_t ipv4_out(uint8_t protocol, ipaddr_t* dest, ipaddr_t* src, pktbuf_t* bu
 {
     dbg_info(DBG_IP, "send an ip pkt");
     
+    
     rentry_t* rt = rt_find(dest);
     if (!rt)
     {

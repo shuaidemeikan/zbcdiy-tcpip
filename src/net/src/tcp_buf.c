@@ -97,3 +97,16 @@ void tcp_buf_read_send(tcp_buf_t * buf, int offset, pktbuf_t * dest, int count) 
         // 不调整buf中的count和out，因为只当被确认时才需要
     }
 }
+
+int tcp_buf_remove(tcp_buf_t * buf, int cnt) {
+    if (cnt > buf->count) {
+        cnt = buf->count;
+    }
+
+    buf->out += cnt;
+    if (buf->out >= buf->size) {
+        buf->out -= buf->size;
+    }
+    buf->count -= cnt;
+    return cnt;
+}

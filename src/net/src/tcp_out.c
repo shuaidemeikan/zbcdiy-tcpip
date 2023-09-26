@@ -183,10 +183,11 @@ net_err_t tcp_ack_process (tcp_t* tcp, tcp_seg_t* seg)
         tcp->snd.una += curr_acked;
         curr_acked -= tcp_buf_remove(&tcp->snd.buf, curr_acked);
         // 如果是确认我方发送的
+        if (curr_acked && (tcp->flags.fin_out))
+            tcp->flags.fin_out = 0;
     }
 
-    if (tcp->flags.fin_out && (tcp_hdr->ack - tcp->snd.una > 0))
-        tcp->flags.fin_out = 0;
+    sock_wakeup(&tcp->base, SOCK_WAIT_WRITE, NET_ERR_OK);
     return NET_ERR_OK;
 }
 
