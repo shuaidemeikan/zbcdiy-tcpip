@@ -102,7 +102,7 @@ net_err_t tcp_established_in(tcp_t *tcp, tcp_seg_t *seg)
     }
 
     // 检查syn位，如果发现有同样的四元组发syn报文，也直接断开
-    // 实际协议栈不是这么做的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
+    // 实际协议栈要求不是这样的，如果收到syn报文，会返回ack和seq的信息，但是这里就不实现这么复杂了
     if (tcp_hdr->f_syn)
     {
         dbg_warning(DBG_TCP, "tcp state established recv syn packet");

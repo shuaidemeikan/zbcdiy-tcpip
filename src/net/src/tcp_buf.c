@@ -98,6 +98,7 @@ void tcp_buf_read_send(tcp_buf_t * buf, int offset, pktbuf_t * dest, int count) 
     }
 }
 
+<<<<<<< HEAD
 int tcp_buf_remove(tcp_buf_t * buf, int cnt) {
     if (cnt > buf->count) {
         cnt = buf->count;
@@ -110,3 +111,17 @@ int tcp_buf_remove(tcp_buf_t * buf, int cnt) {
     buf->count -= cnt;
     return cnt;
 }
+=======
+int tcp_buf_remove(tcp_buf_t* buf, int cnt)
+{
+    if (cnt > buf->count)
+        cnt = buf->count;
+    
+    buf->out += cnt;
+    if (buf->out >= buf->size)
+        buf->out -= buf->size;
+    
+    buf->count -= cnt;
+    return cnt;
+}
+>>>>>>> 76a0de5b2cc561072224c4a9b57da40a836fc206
