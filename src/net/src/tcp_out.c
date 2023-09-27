@@ -5,7 +5,7 @@
 int tcp_write_sndbuf (tcp_t* tcp, const uint8_t* buf, int len)
 {
     int free_cnt = tcp_buf_free_cnt(&tcp->snd.buf);
-    if (free_cnt < len)
+    if (free_cnt <= 0)
         return 0;
     
     int wr_len = (len > free_cnt) ? free_cnt : len;
@@ -85,6 +85,7 @@ static void get_send_info (tcp_t* tcp, int* doff, int* dlen)
     
     // 发送的总长度是:缓存内有多少个数据-发送的偏移，目前没有管窗口大小问题
     *dlen = tcp_buf_cnt(&tcp->snd.buf) - *doff;
+    *dlen = *dlen > tcp->mss ? tcp->mss : *dlen;
     if (*dlen == 0)
         return;
 }

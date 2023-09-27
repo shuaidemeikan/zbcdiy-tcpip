@@ -29,7 +29,7 @@ int tcp_echo_client_start (const char* ip, int port) {
         goto end;
     }
 
-    char sbuf[1024];
+    char sbuf[4096];
     for (int i = 0; i <= 1023; i++)
         sbuf[i] = 'a' + i % 26;
 

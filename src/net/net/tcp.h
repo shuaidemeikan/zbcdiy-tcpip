@@ -9,6 +9,7 @@
 #include "socket.h"
 #include "tcp_buf.h"
 
+#define TCP_DEFAULT_MSS    536
 #define TCP_OPT_END        0            // 选项结束
 #define TCP_OPT_NOP        1            // 无操作，用于填充
 #define TCP_OPT_MSS        2            // 最大段大小
