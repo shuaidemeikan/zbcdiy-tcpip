@@ -1,6 +1,8 @@
 ﻿#include "tcp_state.h"
 #include "tcp_out.h"
 #include "tcp_in.h"
+#include "tcp.h"
+#include "tools.h"
 
 const char * tcp_state_name (tcp_state_t state)
 {
@@ -25,6 +27,46 @@ const char * tcp_state_name (tcp_state_t state)
         state = TCP_STATE_MAX;
     
     return state_name[state];
+}
+
+void tcp_read_options (tcp_t* tcp, tcp_hdr_t* tcp_hdr)
+{
+    uint8_t* opt_start = (uint8_t*)tcp_hdr + sizeof(tcp_hdr_t);
+    uint8_t* opt_end = opt_start + (tcp_hdr_size(tcp_hdr) - sizeof(tcp_hdr_t));
+
+    if (opt_end <= opt_start)
+        return;
+    
+    while(opt_start < opt_end)
+    {
+        tcp_opt_mss_t* opt = (tcp_opt_mss_t*)opt_start;
+
+        switch(opt_start[0])
+        {
+            case TCP_OPT_MSS:
+            {
+                if (opt->length == 4)
+                {
+                    uint16_t mss = x_ntohs(opt->mss);
+                    tcp->mss = mss;
+                }
+                opt_start += opt->length;
+                break;
+            }
+            case TCP_OPT_NOP:
+            {
+                opt_start++;
+                break;
+            }
+            case TCP_OPT_END:
+                return;
+            default:
+            {
+                opt_start++;
+                break;
+            }
+        }
+    }
 }
 
 void tcp_set_state (tcp_t * tcp, tcp_state_t state)
@@ -76,6 +118,7 @@ net_err_t tcp_syn_sent_in(tcp_t *tcp, tcp_seg_t *seg)
         tcp->rcv.iss = tcp_hdr->seq;                // 我方接收起始序列应该是对方的seq     
         tcp->rcv.nxt = tcp_hdr->seq + 1;            // 我方待接收应该是seq+1，因为对方已经发送了一个syn
         tcp->flags.irs_valid = 1;                   // 将tcp状态设为收到对方的起始序号
+        tcp_read_options(tcp, tcp_hdr);
         // ack位存在，则说明是对方发来的响应包
         if (tcp_hdr->f_ack)
         {

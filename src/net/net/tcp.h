@@ -9,7 +9,18 @@
 #include "socket.h"
 #include "tcp_buf.h"
 
+#define TCP_OPT_END        0            // 选项结束
+#define TCP_OPT_NOP        1            // 无操作，用于填充
+#define TCP_OPT_MSS        2            // 最大段大小
+
 #pragma pack(1)
+
+typedef struct _tcp_opt_mss_t {
+    uint8_t kind;
+    uint8_t length;
+    uint16_t mss;
+}tcp_opt_mss_t;
+
 typedef struct _tcp_hdr_t
 {
     uint16_t sport;
@@ -99,6 +110,7 @@ typedef struct _tcp_t
     sock_t base;
 
     tcp_state_t state;
+    uint16_t mss;
     struct
     {
         uint32_t syn_out : 1;        // 输出syn标志位

@@ -184,20 +184,15 @@ net_err_t tcp_ack_process (tcp_t* tcp, tcp_seg_t* seg)
         tcp->snd.una += curr_acked;
         // 移除缓存中的已确认的数据
         curr_acked -= tcp_buf_remove(&tcp->snd.buf, curr_acked);
-<<<<<<< HEAD
         // 如果是确认我方发送的
-=======
+        // 只有一种情况curracked还有值，那就是当我方发一个fin报文，收到对方的回应包时
         // 如果curracked还有值，并且tcp控制块的fin_out位是1，才会进入，把fin_out置0，同上面所说，这不是很懂有什么意义
->>>>>>> 76a0de5b2cc561072224c4a9b57da40a836fc206
         if (curr_acked && (tcp->flags.fin_out))
             tcp->flags.fin_out = 0;
     }
 
-<<<<<<< HEAD
     sock_wakeup(&tcp->base, SOCK_WAIT_WRITE, NET_ERR_OK);
-=======
     // 走到这里，不论如何都说明
->>>>>>> 76a0de5b2cc561072224c4a9b57da40a836fc206
     return NET_ERR_OK;
 }
 
