@@ -148,6 +148,7 @@ net_err_t tcp_transmit (tcp_t* tcp)
 
 }
 
+
 net_err_t tcp_send_syn(tcp_t* tcp)
 {
     tcp->flags.syn_out = 1;
