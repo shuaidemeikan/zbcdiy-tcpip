@@ -113,6 +113,11 @@ static int copy_send_data (tcp_t* tcp, pktbuf_t* buf, int doff, int dlen)
 
 net_err_t tcp_transmit (tcp_t* tcp)
 {
+    int dlen, doff;
+    get_send_info(tcp, &doff, &dlen);
+    if (dlen < 0)
+        return NET_ERR_OK;
+
     pktbuf_t* buf = pktbuf_alloc(sizeof(tcp_hdr_t));
     if (!buf)
     {
@@ -133,12 +138,8 @@ net_err_t tcp_transmit (tcp_t* tcp)
     tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
 
     if (tcp->flags.fin_out)
-        hdr->f_fin = 1;
-
-    int dlen, doff;
-    get_send_info(tcp, &doff, &dlen);
-    if (dlen < 0)
-        return NET_ERR_OK;
+        // 只有当发送缓存内的所有数据全部发出去之后才能发送挥手包
+        hdr->f_fin = (tcp_buf_cnt(&tcp->snd.buf) == 0) ? 1 : 0;
 
     copy_send_data(tcp, buf, doff, dlen);
 

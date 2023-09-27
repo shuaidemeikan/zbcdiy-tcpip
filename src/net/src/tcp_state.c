@@ -161,6 +161,10 @@ net_err_t tcp_established_in(tcp_t *tcp, tcp_seg_t *seg)
     }
 
     tcp_data_in(tcp, seg);
+
+    // 判断是否需要发送一个应答的包，具体的判断写在函数里
+    tcp_transmit(tcp);
+
     if (tcp_hdr->f_fin)
         tcp_set_state(tcp, TCP_STATE_CLOSE_WAIT);
 
@@ -194,6 +198,9 @@ net_err_t tcp_close_wait_in (tcp_t * tcp, tcp_seg_t * seg)
         return NET_ERR_UNREACH;
     }
 
+    // 判断是否需要发送一个应答的包，具体的判断写在函数里
+    tcp_transmit(tcp);
+
     return NET_ERR_OK;
 }
 
@@ -222,6 +229,9 @@ net_err_t tcp_last_ack_in (tcp_t * tcp, tcp_seg_t * seg)
         dbg_warning(DBG_TCP, "ack process failed");
         return NET_ERR_UNREACH;
     }
+
+    // 判断是否需要发送一个应答的包，具体的判断写在函数里
+    tcp_transmit(tcp);
 
     return tcp_abort(tcp, NET_ERR_CLOSE);
 }
@@ -254,6 +264,10 @@ net_err_t tcp_fin_wait_1_in(tcp_t * tcp, tcp_seg_t * seg)
     }
 
     tcp_data_in(tcp, seg);
+
+    // 判断是否需要发送一个应答的包，具体的判断写在函数里
+    tcp_transmit(tcp);
+
     if (tcp->flags.fin_out == 0)
     {
         if (tcp_hdr->f_fin)
@@ -262,7 +276,7 @@ net_err_t tcp_fin_wait_1_in(tcp_t * tcp, tcp_seg_t * seg)
         else
             // fin=0，又通过了种种检查，则说明对方回应了我方第一次挥手的包，进入wait2状态并等待下一个包
             tcp_set_state(tcp, TCP_STATE_FIN_WAIT_2);
-    }else
+    }else if (tcp->flags.fin_out == 1)
     {
         tcp_set_state(tcp, TCP_STATE_CLOSING);
     }
@@ -333,6 +347,9 @@ net_err_t tcp_closing_in (tcp_t * tcp, tcp_seg_t * seg)
         dbg_warning(DBG_TCP, "ack process failed");
         return NET_ERR_UNREACH;
     }
+
+    // 判断是否需要发送一个应答的包，具体的判断写在函数里
+    tcp_transmit(tcp);
 
     if (tcp->flags.fin_out == 0)
     {
