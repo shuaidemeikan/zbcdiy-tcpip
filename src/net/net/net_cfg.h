@@ -65,4 +65,5 @@
 
 #define TCP_MAX_NR              30
 #define TCP_SBUF_SIZE           2048
+#define TCP_RBUF_SIZE           2048
 #endif // !NET_CFG_H

@@ -286,7 +286,9 @@ int main (void) {
 	
 	//udp_echo_server_start(1000);
 	//udp_echo_client_start("192.168.74.3", 4567);
-	tcp_echo_client_start("192.168.74.3", 4567);
+	//tcp_echo_client_start("192.168.74.3", 4567);
+	void download_test (const char* filename, int port);
+	download_test("hello.txt", 4567);
 
 	basic_test();
 

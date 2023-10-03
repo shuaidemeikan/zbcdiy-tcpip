@@ -118,6 +118,16 @@ net_err_t tcp_transmit (tcp_t* tcp)
     if (dlen < 0)
         return NET_ERR_OK;
 
+    int seq_len = dlen;
+    if (tcp->flags.syn_out)
+        seq_len++;
+    
+    if (tcp->flags.fin_out)
+        seq_len++;
+    
+    if (seq_len == 0)
+        return NET_ERR_OK;
+
     pktbuf_t* buf = pktbuf_alloc(sizeof(tcp_hdr_t));
     if (!buf)
     {

@@ -1,6 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\app\test\download.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\app\test\echo\tcp_echo_client.c">
       <Filter>Source Files</Filter>
     </ClCompile>

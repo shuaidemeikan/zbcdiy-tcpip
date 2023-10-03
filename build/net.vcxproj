@@ -313,6 +313,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\app\test\download.c" />
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\app\test\echo\tcp_echo_client.c" />
     <ClInclude Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\app\test\echo\tcp_echo_client.h" />
     <ClCompile Include="C:\Users\11310\Desktop\开发\diy-tcpip\src\app\test\echo\tcp_echo_server.c" />

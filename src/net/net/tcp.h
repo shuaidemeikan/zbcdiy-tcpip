@@ -141,6 +141,8 @@ typedef struct _tcp_t
 
     struct 
     {
+        tcp_buf_t buf;
+        uint8_t data[TCP_RBUF_SIZE];
         uint32_t nxt;                   // 下一个期望接收的序号
         uint32_t iss;                   // 起始接收序号
         sock_wait_t wait;

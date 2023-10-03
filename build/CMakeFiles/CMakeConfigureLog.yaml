@@ -24,7 +24,7 @@ events:
       The output was:
       0
       适用于 .NET Framework MSBuild 版本 17.7.2+d6990bcfa
-      生成启动时间为 2023/9/27 18:30:00。
+      生成启动时间为 2023/10/2 21:48:55。
       
       节点 1 上的项目“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\3.27.5\\CompilerIdC\\CompilerIdC.vcxproj”(默认目标)。
       PrepareForBuild:
@@ -52,7 +52,7 @@ events:
           0 个警告
           0 个错误
       
-      已用时间 00:00:01.67
+      已用时间 00:00:01.98
       
       
       Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CompilerIdC.exe"
@@ -78,7 +78,7 @@ events:
       The output was:
       0
       适用于 .NET Framework MSBuild 版本 17.7.2+d6990bcfa
-      生成启动时间为 2023/9/27 18:30:02。
+      生成启动时间为 2023/10/2 21:48:57。
       
       节点 1 上的项目“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\3.27.5\\CompilerIdCXX\\CompilerIdCXX.vcxproj”(默认目标)。
       PrepareForBuild:
@@ -106,7 +106,7 @@ events:
           0 个警告
           0 个错误
       
-      已用时间 00:00:01.25
+      已用时间 00:00:01.57
       
       
       Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CompilerIdCXX.exe"
@@ -125,8 +125,8 @@ events:
     checks:
       - "Detecting C compiler ABI info"
     directories:
-      source: "C:/Users/11310/Desktop/\u5f00\u53d1/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-al8nde"
-      binary: "C:/Users/11310/Desktop/\u5f00\u53d1/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-al8nde"
+      source: "C:/Users/11310/Desktop/\u5f00\u53d1/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-3u7lpw"
+      binary: "C:/Users/11310/Desktop/\u5f00\u53d1/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-3u7lpw"
     cmakeVariables:
       CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS /W3"
       CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
@@ -135,39 +135,39 @@ events:
       variable: "CMAKE_C_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-al8nde'
+        Change Dir: 'C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-3u7lpw'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_8863c.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_ecf70.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         适用于 .NET Framework MSBuild 版本 17.7.2+d6990bcfa
-        生成启动时间为 2023/9/27 18:30:04。
+        生成启动时间为 2023/10/2 21:49:00。
         
-        节点 1 上的项目“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-al8nde\\cmTC_8863c.vcxproj”(默认目标)。
+        节点 1 上的项目“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3u7lpw\\cmTC_ecf70.vcxproj”(默认目标)。
         PrepareForBuild:
-          正在创建目录“cmTC_8863c.dir\\Debug\\”。
-          正在创建目录“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-al8nde\\Debug\\”。
-          正在创建目录“cmTC_8863c.dir\\Debug\\cmTC_8863c.tlog\\”。
+          正在创建目录“cmTC_ecf70.dir\\Debug\\”。
+          正在创建目录“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3u7lpw\\Debug\\”。
+          正在创建目录“cmTC_ecf70.dir\\Debug\\cmTC_ecf70.tlog\\”。
         InitializeBuildStatus:
-          正在创建“cmTC_8863c.dir\\Debug\\cmTC_8863c.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
-          正在对“cmTC_8863c.dir\\Debug\\cmTC_8863c.tlog\\unsuccessfulbuild”执行 Touch 任务。
+          正在创建“cmTC_ecf70.dir\\Debug\\cmTC_ecf70.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+          正在对“cmTC_ecf70.dir\\Debug\\cmTC_ecf70.tlog\\unsuccessfulbuild”执行 Touch 任务。
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.37.32822\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_8863c.dir\\Debug\\\\" /Fd"cmTC_8863c.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.37.32822\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_ecf70.dir\\Debug\\\\" /Fd"cmTC_ecf70.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c"
           用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.37.32824 版
           CMakeCCompilerABI.c
           版权所有(C) Microsoft Corporation。保留所有权利。
-          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_8863c.dir\\Debug\\\\" /Fd"cmTC_8863c.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c"
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /Fo"cmTC_ecf70.dir\\Debug\\\\" /Fd"cmTC_ecf70.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TC /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c"
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.37.32822\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-al8nde\\Debug\\cmTC_8863c.exe" /INCREMENTAL /ILK:"cmTC_8863c.dir\\Debug\\cmTC_8863c.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-al8nde/Debug/cmTC_8863c.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-al8nde/Debug/cmTC_8863c.lib" /MACHINE:X64  /machine:x64 cmTC_8863c.dir\\Debug\\CMakeCCompilerABI.obj
-          cmTC_8863c.vcxproj -> C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-al8nde\\Debug\\cmTC_8863c.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.37.32822\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3u7lpw\\Debug\\cmTC_ecf70.exe" /INCREMENTAL /ILK:"cmTC_ecf70.dir\\Debug\\cmTC_ecf70.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-3u7lpw/Debug/cmTC_ecf70.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-3u7lpw/Debug/cmTC_ecf70.lib" /MACHINE:X64  /machine:x64 cmTC_ecf70.dir\\Debug\\CMakeCCompilerABI.obj
+          cmTC_ecf70.vcxproj -> C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3u7lpw\\Debug\\cmTC_ecf70.exe
         FinalizeBuildStatus:
-          正在删除文件“cmTC_8863c.dir\\Debug\\cmTC_8863c.tlog\\unsuccessfulbuild”。
-          正在对“cmTC_8863c.dir\\Debug\\cmTC_8863c.tlog\\cmTC_8863c.lastbuildstate”执行 Touch 任务。
-        已完成生成项目“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-al8nde\\cmTC_8863c.vcxproj”(默认目标)的操作。
+          正在删除文件“cmTC_ecf70.dir\\Debug\\cmTC_ecf70.tlog\\unsuccessfulbuild”。
+          正在对“cmTC_ecf70.dir\\Debug\\cmTC_ecf70.tlog\\cmTC_ecf70.lastbuildstate”执行 Touch 任务。
+        已完成生成项目“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-3u7lpw\\cmTC_ecf70.vcxproj”(默认目标)的操作。
         
         已成功生成。
             0 个警告
             0 个错误
         
-        已用时间 00:00:01.12
+        已用时间 00:00:03.81
         
       exitCode: 0
   -
@@ -179,8 +179,8 @@ events:
     checks:
       - "Detecting CXX compiler ABI info"
     directories:
-      source: "C:/Users/11310/Desktop/\u5f00\u53d1/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-c2pyo0"
-      binary: "C:/Users/11310/Desktop/\u5f00\u53d1/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-c2pyo0"
+      source: "C:/Users/11310/Desktop/\u5f00\u53d1/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-i8fatb"
+      binary: "C:/Users/11310/Desktop/\u5f00\u53d1/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-i8fatb"
     cmakeVariables:
       CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /W3 /GR /EHsc"
       CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
@@ -189,39 +189,39 @@ events:
       variable: "CMAKE_CXX_ABI_COMPILED"
       cached: true
       stdout: |
-        Change Dir: 'C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-c2pyo0'
+        Change Dir: 'C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-i8fatb'
         
-        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_3917d.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/amd64/MSBuild.exe" cmTC_e2427.vcxproj /p:Configuration=Debug /p:Platform=x64 /p:VisualStudioVersion=17.0 /v:n
         适用于 .NET Framework MSBuild 版本 17.7.2+d6990bcfa
-        生成启动时间为 2023/9/27 18:30:06。
+        生成启动时间为 2023/10/2 21:49:05。
         
-        节点 1 上的项目“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-c2pyo0\\cmTC_3917d.vcxproj”(默认目标)。
+        节点 1 上的项目“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-i8fatb\\cmTC_e2427.vcxproj”(默认目标)。
         PrepareForBuild:
-          正在创建目录“cmTC_3917d.dir\\Debug\\”。
-          正在创建目录“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-c2pyo0\\Debug\\”。
-          正在创建目录“cmTC_3917d.dir\\Debug\\cmTC_3917d.tlog\\”。
+          正在创建目录“cmTC_e2427.dir\\Debug\\”。
+          正在创建目录“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-i8fatb\\Debug\\”。
+          正在创建目录“cmTC_e2427.dir\\Debug\\cmTC_e2427.tlog\\”。
         InitializeBuildStatus:
-          正在创建“cmTC_3917d.dir\\Debug\\cmTC_3917d.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
-          正在对“cmTC_3917d.dir\\Debug\\cmTC_3917d.tlog\\unsuccessfulbuild”执行 Touch 任务。
+          正在创建“cmTC_e2427.dir\\Debug\\cmTC_e2427.tlog\\unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+          正在对“cmTC_e2427.dir\\Debug\\cmTC_e2427.tlog\\unsuccessfulbuild”执行 Touch 任务。
         ClCompile:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.37.32822\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_3917d.dir\\Debug\\\\" /Fd"cmTC_3917d.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.27\\Modules\\CMakeCXXCompilerABI.cpp"
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.37.32822\\bin\\HostX64\\x64\\CL.exe /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_e2427.dir\\Debug\\\\" /Fd"cmTC_e2427.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.27\\Modules\\CMakeCXXCompilerABI.cpp"
           用于 x64 的 Microsoft (R) C/C++ 优化编译器 19.37.32824 版
           CMakeCXXCompilerABI.cpp
           版权所有(C) Microsoft Corporation。保留所有权利。
-          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_3917d.dir\\Debug\\\\" /Fd"cmTC_3917d.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.27\\Modules\\CMakeCXXCompilerABI.cpp"
+          cl /c /Zi /W3 /WX- /diagnostics:column /Od /Ob0 /D _MBCS /D WIN32 /D _WINDOWS /D "CMAKE_INTDIR=\\"Debug\\"" /Gm- /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /GR /Fo"cmTC_e2427.dir\\Debug\\\\" /Fd"cmTC_e2427.dir\\Debug\\vc143.pdb" /external:W3 /Gd /TP /errorReport:queue "C:\\Program Files\\CMake\\share\\cmake-3.27\\Modules\\CMakeCXXCompilerABI.cpp"
         Link:
-          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.37.32822\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-c2pyo0\\Debug\\cmTC_3917d.exe" /INCREMENTAL /ILK:"cmTC_3917d.dir\\Debug\\cmTC_3917d.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-c2pyo0/Debug/cmTC_3917d.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-c2pyo0/Debug/cmTC_3917d.lib" /MACHINE:X64  /machine:x64 cmTC_3917d.dir\\Debug\\CMakeCXXCompilerABI.obj
-          cmTC_3917d.vcxproj -> C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-c2pyo0\\Debug\\cmTC_3917d.exe
+          C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.37.32822\\bin\\HostX64\\x64\\link.exe /ERRORREPORT:QUEUE /OUT:"C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-i8fatb\\Debug\\cmTC_e2427.exe" /INCREMENTAL /ILK:"cmTC_e2427.dir\\Debug\\cmTC_e2427.ilk" /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-i8fatb/Debug/cmTC_e2427.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:/Users/11310/Desktop/开发/diy-tcpip/build/CMakeFiles/CMakeScratch/TryCompile-i8fatb/Debug/cmTC_e2427.lib" /MACHINE:X64  /machine:x64 cmTC_e2427.dir\\Debug\\CMakeCXXCompilerABI.obj
+          cmTC_e2427.vcxproj -> C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-i8fatb\\Debug\\cmTC_e2427.exe
         FinalizeBuildStatus:
-          正在删除文件“cmTC_3917d.dir\\Debug\\cmTC_3917d.tlog\\unsuccessfulbuild”。
-          正在对“cmTC_3917d.dir\\Debug\\cmTC_3917d.tlog\\cmTC_3917d.lastbuildstate”执行 Touch 任务。
-        已完成生成项目“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-c2pyo0\\cmTC_3917d.vcxproj”(默认目标)的操作。
+          正在删除文件“cmTC_e2427.dir\\Debug\\cmTC_e2427.tlog\\unsuccessfulbuild”。
+          正在对“cmTC_e2427.dir\\Debug\\cmTC_e2427.tlog\\cmTC_e2427.lastbuildstate”执行 Touch 任务。
+        已完成生成项目“C:\\Users\\11310\\Desktop\\开发\\diy-tcpip\\build\\CMakeFiles\\CMakeScratch\\TryCompile-i8fatb\\cmTC_e2427.vcxproj”(默认目标)的操作。
         
         已成功生成。
             0 个警告
             0 个错误
         
-        已用时间 00:00:01.15
+        已用时间 00:00:02.33
         
       exitCode: 0
 ...

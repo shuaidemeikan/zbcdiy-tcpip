@@ -1,6 +1,7 @@
 #include "tcp_in.h"
 #include "tcp_out.h" 
 #include "tcp_state.h"
+#include "tcp_buf.h"
 
 void tcp_seg_init (tcp_seg_t* seg, pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
 {
@@ -77,6 +78,15 @@ net_err_t tcp_in (pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
         pktbuf_free(buf);
     }
 
+    // 下一步就要调对应状态的处理函数了，每个状态的处理函数第一句都是tcp_data_in
+    // tcp_data_in刚开始的时候就会把收到的数据写入到接收缓存里
+    // 但是此时的数据包是还带tcp包头的，所以需要调整pktbuf的指针，让它直接指向数据部分
+    net_err_t err = pktbuf_seek(buf, tcp_hdr_size(tcp_hdr));
+    if (err < 0)
+    {
+        dbg_error(DBG_TCP, "seek to data failed");
+        return NET_ERR_SIZE;
+    }
 
     tcp_state_proc[tcp->state](tcp, &seg);
 
@@ -84,17 +94,42 @@ net_err_t tcp_in (pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
     return NET_ERR_OK;
 }
 
+static int copy_data_to_rcvbuf(tcp_t* tcp, tcp_seg_t* seg)
+{
+    int doffset = seg->seq - tcp->rcv.nxt;
+    if (seg->data_len)
+    {
+        tcp_buf_write_rcv(&tcp->rcv.buf, doffset, seg->buf, seg->data_len);
+    }
+    return 0;
+}
+
 /**
  * @brief 目前作用是检查一下是否该发送fin包
  * 如果要发送fin包，需要把snd的next指针往后移一位，然后唤醒所有等待的接口
  * 如果不需要发送，那么说明来的是正常的数据，只唤醒等待读的接口就ok
+ * 现在的作用又加一条，开头就会将收到的数据包内的数据部分拷贝到tcp结构的接收缓存内
  * @param tcp 
  * @param seg 
  * @return ** net_err_t 
  */
 net_err_t tcp_data_in (tcp_t* tcp, tcp_seg_t* seg)
 {
+    //tcp_buf_write_rcv(&tcp->rcv.buf, 0, seg->buf, seg->data_len);
+    int size = copy_data_to_rcvbuf(tcp, seg);
+    if (size < 0)
+    {
+        dbg_error(DBG_TCP, "copy data to rcvbuf failed");
+        return NET_ERR_SIZE;
+    }
+
     int wakeup = 0;
+    if (size)
+    {
+        tcp->rcv.nxt += size;
+        wakeup++;
+    }
+
     tcp_hdr_t* tcp_hdr = seg->hdr;
     if (tcp_hdr->f_fin)
     {
