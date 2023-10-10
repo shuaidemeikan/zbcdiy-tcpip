@@ -1,4 +1,4 @@
-#include "tcp_in.h"
+﻿#include "tcp_in.h"
 #include "tcp_out.h" 
 #include "tcp_state.h"
 #include "tcp_buf.h"
@@ -13,6 +13,29 @@ void tcp_seg_init (tcp_seg_t* seg, pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
     seg->data_len = buf->total_size - tcp_hdr_size(seg->hdr);
     seg->seq = seg->hdr->seq;
     seg->seq_len = seg->data_len + seg->hdr->f_syn + seg->hdr->f_fin; 
+}
+
+// 详见:rfc793 3.3节 https://www.yuque.com/lishutong-docs/tcpip/kmuon3
+static int tcp_seq_acceptable(tcp_t *tcp, tcp_seg_t *seg) {
+    uint32_t rcv_win = tcp_rcv_windows(tcp);
+
+    if (seg->seq_len == 0) {
+        if (rcv_win == 0) {
+            return seg->seq == tcp->rcv.nxt;
+        } else {
+            int v = TCP_SEQ_LE(tcp->rcv.nxt, seg->seq) && TCP_SEQ_LE(seg->seq, tcp->rcv.nxt + rcv_win - 1);
+            return v;
+        }
+    } else {
+        if (rcv_win == 0) {
+            return 0;
+        } else {
+            uint32_t slast = seg->seq + seg->seq_len - 1;
+            int v = TCP_SEQ_LE(tcp->rcv.nxt, seg->seq) && TCP_SEQ_LE(seg->seq, tcp->rcv.nxt + rcv_win - 1);
+            v |= TCP_SEQ_LE(tcp->rcv.nxt, slast) && TCP_SEQ_LE(slast, tcp->rcv.nxt + rcv_win - 1);
+            return v;
+        }
+    }
 }
 
 net_err_t tcp_in (pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
@@ -88,8 +111,18 @@ net_err_t tcp_in (pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
         return NET_ERR_SIZE;
     }
 
+    // 以下几个状态，之前未接受过对方的报文，其不知道此次的序列号是否正确，因此不进行序号号检查
+    if ((tcp->state != TCP_STATE_CLOSED)  && (tcp->state != TCP_STATE_SYN_SENT) && (tcp->state != TCP_STATE_LISTEN)) {
+       if (!tcp_seq_acceptable(tcp, &seg)) {
+            dbg_info(DBG_TCP, "seq incorrect: %d < %d", seg.seq, tcp->rcv.nxt);
+            goto seg_drop;
+        }
+    }
+
     tcp_state_proc[tcp->state](tcp, &seg);
 
+seg_drop:
+    pktbuf_free(buf);
     tcp_show_list();
     return NET_ERR_OK;
 }
@@ -97,7 +130,8 @@ net_err_t tcp_in (pktbuf_t* buf, ipaddr_t* src, ipaddr_t* dest)
 static int copy_data_to_rcvbuf(tcp_t* tcp, tcp_seg_t* seg)
 {
     int doffset = seg->seq - tcp->rcv.nxt;
-    if (seg->data_len)
+    // 这里有doffset=0的判断，其实是还没做重传之前的妥协
+    if (seg->data_len && (doffset == 0))
     {
         tcp_buf_write_rcv(&tcp->rcv.buf, doffset, seg->buf, seg->data_len);
     }

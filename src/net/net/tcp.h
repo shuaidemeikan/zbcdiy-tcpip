@@ -164,14 +164,22 @@ net_err_t tcp_init(void);
 sock_t* tcp_create (int family, int protocol);
 tcp_t* tcp_find(ipaddr_t* dest, uint16_t dport, ipaddr_t* src, uint16_t sport);
 net_err_t tcp_abort (tcp_t* tcp, int err);
+
 #if DBG_DISP_ENABLED(DBG_TCP)       // 注意头文件要包含dbg.h和net_cfg.h
 void tcp_show_info (char * msg, tcp_t * tcp);
 void tcp_display_pkt (char * msg, tcp_hdr_t * tcp_hdr, pktbuf_t * buf);
 void tcp_show_list (void);
+int tcp_rcv_windows (tcp_t* tcp);
 #else
 #define tcp_show_info(msg, tcp)
 #define tcp_display_pkt(msg, hdr, buf)
 #define tcp_show_list()
 #endif
+
+// a <=b
+#define TCP_SEQ_LE(a, b)    (((int32_t)(a) - (int32_t)(b)) <=0)
+
+// a <b
+#define TCP_SEQ_LT(a, b)    (((int32_t)(a) - (int32_t)(b)) <0)
 
 #endif

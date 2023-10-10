@@ -98,11 +98,11 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;or="||";and="&amp;&amp;";_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;or=\"||\";and=\"&amp;&amp;\";_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Users\11310\Desktop\开发\diy-tcpip;C:\Users\11310\Desktop\开发\diy-tcpip\npcap\Include;C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net;C:\Users\11310\Desktop\开发\diy-tcpip\src\plat;C:\Users\11310\Desktop\开发\diy-tcpip\src\app;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -139,13 +139,13 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;or="||";and="&amp;&amp;";_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;or=\"||\";and=\"&amp;&amp;\";_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Users\11310\Desktop\开发\diy-tcpip;C:\Users\11310\Desktop\开发\diy-tcpip\npcap\Include;C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net;C:\Users\11310\Desktop\开发\diy-tcpip\src\plat;C:\Users\11310\Desktop\开发\diy-tcpip\src\app;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -182,13 +182,13 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;or="||";and="&amp;&amp;";_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;or=\"||\";and=\"&amp;&amp;\";_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Users\11310\Desktop\开发\diy-tcpip;C:\Users\11310\Desktop\开发\diy-tcpip\npcap\Include;C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net;C:\Users\11310\Desktop\开发\diy-tcpip\src\plat;C:\Users\11310\Desktop\开发\diy-tcpip\src\app;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
@@ -226,11 +226,11 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;or="||";and="&amp;&amp;";_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
     </ClCompile>
     <ResourceCompile>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;or=\"||\";and=\"&amp;&amp;\";_CRT_SECURE_NO_WARNINGS;NET_DRIVER_PCAP;SYS_PLAT_WINDOWS;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Users\11310\Desktop\开发\diy-tcpip;C:\Users\11310\Desktop\开发\diy-tcpip\npcap\Include;C:\Users\11310\Desktop\开发\diy-tcpip\src\net\net;C:\Users\11310\Desktop\开发\diy-tcpip\src\plat;C:\Users\11310\Desktop\开发\diy-tcpip\src\app;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>

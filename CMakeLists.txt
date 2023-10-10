@@ -25,6 +25,9 @@ file(GLOB_RECURSE SOURCE_LIST "src/*.c" "src/*.h")
 # 将源文件列表加入到工程中
 add_executable(${PROJECT_NAME} ${SOURCE_LIST})
 
+target_compile_definitions(net PUBLIC or="||")
+target_compile_definitions(net PUBLIC and="&&")
+
 # 与一些库进行编译链接，生成最终的程序
 # 针对网络的平台配置
 add_definitions(-DNET_DRIVER_PCAP)    # use pcap

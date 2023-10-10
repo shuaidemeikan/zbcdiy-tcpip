@@ -111,6 +111,27 @@ static int copy_send_data (tcp_t* tcp, pktbuf_t* buf, int doff, int dlen)
     return dlen;
 }
 
+static void write_sync_option (tcp_t* tcp, pktbuf_t* buf)
+{
+    int opt_len = sizeof(tcp_opt_mss_t);
+    net_err_t err = pktbuf_resize(buf, (int)(buf->total_size + opt_len));
+    if (err < 0)
+    {
+        dbg_error(DBG_TCP, "pktbuf resize error");
+        return;
+    }
+
+    tcp_opt_mss_t mss;
+    mss.kind = TCP_OPT_MSS;
+    mss.length = sizeof(tcp_opt_mss_t);
+    mss.mss = x_ntohs(tcp->mss);
+
+    pktbuf_reset_acc(buf);
+    pktbuf_seek(buf, sizeof(tcp_hdr_t));
+    err = pktbuf_write(buf, (uint8_t*)&mss, sizeof(mss));
+
+}
+
 net_err_t tcp_transmit (tcp_t* tcp)
 {
     int dlen, doff;
@@ -144,12 +165,15 @@ net_err_t tcp_transmit (tcp_t* tcp)
     hdr->flags = 0;
     hdr->f_syn = tcp->flags.syn_out;                    // 判断是否在发送握手包
     hdr->f_ack = tcp->flags.irs_valid;                  // 判断是否需要发送ack
-    hdr->win = 1024;
-    tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
+    hdr->win = tcp_rcv_windows(tcp);
 
     if (tcp->flags.fin_out)
         // 只有当发送缓存内的所有数据全部发出去之后才能发送挥手包
         hdr->f_fin = (tcp_buf_cnt(&tcp->snd.buf) == 0) ? 1 : 0;
+
+    if (hdr->f_syn)
+        write_sync_option(tcp, buf);
+    tcp_set_hdr_size(hdr, buf->total_size);
 
     copy_send_data(tcp, buf, doff, dlen);
 
@@ -168,7 +192,8 @@ net_err_t tcp_send_syn(tcp_t* tcp)
 }
 
 /**
- * @brief 收到包时调用，处理握手和挥手时的标志位变化
+ * @brief 收到包时调用，检查ack的是否合法，是否为重传包
+ * 接着处理握手和挥手时的标志位变化
  * 再根据收到数据包的seq和ack，来判断收到的包中是否携带了数据，还是说是单纯的握手和挥手包
  * @param tcp 
  * @param seg 
@@ -177,6 +202,16 @@ net_err_t tcp_send_syn(tcp_t* tcp)
 net_err_t tcp_ack_process (tcp_t* tcp, tcp_seg_t* seg)
 {
     tcp_hdr_t* tcp_hdr = seg->hdr;
+
+    // 要求必须: una < ack <= nxt，这个包才是这次可以被接收的
+    if (TCP_SEQ_LE(tcp_hdr->ack, tcp->snd.una)) {
+        // 序号较小，可能是重传的包
+        return NET_ERR_OK;
+    } else if (TCP_SEQ_LT(tcp->snd.nxt, tcp_hdr->ack)) {
+        // ack不合法
+        return NET_ERR_UNREACH;
+    }
+
     // 当tcp处于sendin时的处理
     if (tcp->flags.syn_out)
     {
@@ -230,7 +265,7 @@ net_err_t tcp_send_ack(tcp_t* tcp, tcp_seg_t* seg)
     hdr->ack = tcp->rcv.nxt;
     hdr->flags = 0;
     hdr->f_ack = 1;
-    hdr->win = 1024;
+    hdr->win = tcp_rcv_windows(tcp);
     hdr->urgptr = 0;
     tcp_set_hdr_size(hdr, sizeof(tcp_hdr_t));
 

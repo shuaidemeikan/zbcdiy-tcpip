@@ -27,7 +27,7 @@ void download_test (const char* filename, int port)
     server_addr.sin_addr.s_addr = inet_addr(friend0_ip);
     server_addr.sin_port = htons(port);
 
-    if (connect(sockfd, (const struct x_sockaddr*)&server_addr, sizeof(server_addr)) < 0)
+    if (connect(sockfd, (const struct sockaddr*)&server_addr, sizeof(server_addr)) < 0)
     {
         printf("connect failed.\n");
         goto end;
@@ -39,6 +39,7 @@ void download_test (const char* filename, int port)
     while ((rcv_size = recv(sockfd, buf, sizeof(buf), 0)) > 0)
     {
         fwrite(buf, 1, rcv_size, file);
+        fflush(file);
         printf(".");
         total_size += rcv_size;
     }

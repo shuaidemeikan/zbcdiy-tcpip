@@ -502,8 +502,11 @@ net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t
     {
     case NET_PROTOCOL_ICMPv4:
     {
-        icmpv4_in(src_ip, &netif->ipaddr, buf);
-        break;
+        net_err_t err = icmpv4_in(src_ip, &netif->ipaddr, buf);
+        if (err < 0)
+            return err;
+        else
+            return NET_ERR_OK;
     }
     case NET_PROTOCOL_UDP:
         net_err_t err = udp_in(buf, src_ip, dest_ip);
@@ -537,6 +540,7 @@ net_err_t ip_normal_in(netif_t* netif, pktbuf_t* buf, ipaddr_t* src_ip, ipaddr_t
             dbg_error(DBG_IP, "raw in failed!");
             return err;
         }
+        return NET_ERR_OK;
     }
 
     //pktbuf_free(buf);

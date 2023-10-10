@@ -298,7 +298,7 @@ int main (void) {
 	net_err_t test_func (struct _func_msg_t * msg);
 	int arg = 0x1234;
 	net_err_t err = exmsg_func_exec(test_func, &arg);
-
+	int asd = 1 and 0;
 	char cmd[32], param[32];
 	while(1)
 	{
